@@ -1,0 +1,304 @@
+---
+title: "219_A1"
+author: "Lumi Kang"
+date: "2025-01-27"
+output: html_document
+---
+
+```{r setup}
+library(readr)
+library(dplyr)
+library(knitr)
+library(ggplot2)
+```
+
+## Selected article: Floyd, S., Jeppsen, C. & Goldberg, A.E. Brief Report: Children on the Autism Spectrum are Challenged by Complex Word Meanings. J Autism Dev Disord 51, 2543–2549 (2021). https://doi.org/10.1007/s10803-020-04687-x
+
+## Read in data 
+
+```{r}
+directory = "/Users/lumikang/Documents/UCSD/25/WI/219"
+file_name = "floyd_et_at.csv"
+
+df = read_csv(file_name)
+head(df)
+
+```
+
+## Summarize the data by block and plot
+
+### By Subject
+
+```{r}
+asd_exp = filter(df, Group == "A") |>
+  group_by(Condition, Subject) |>
+  summarize(
+    accuracy_asd_exp = mean(Total), .groups = "drop"
+  )
+
+nt_exp = filter(df, Group =="C") |>
+  group_by(Condition, Subject) |>
+  summarize(
+    accuracy_nt_exp = mean(Total)
+  )
+
+asd_later = filter(df, Group == "A") |>
+  group_by(Condition, Subject) |>
+  summarize(
+    accuracy_asd_later = mean(Total)
+  )
+
+nt_later = filter(df, Group == "C") |>
+  group_by(Condition, Subject) |>
+  summarize(
+    accuracy_nt_later = mean(Total)
+  )
+
+```
+
+### Across Subjects
+
+```{r}
+overall_asd_exp = asd_exp |>
+  group_by(Condition) |>
+  summarize(mean_accuracy_asd_exp = mean(accuracy_asd_exp),
+            sd_accuracy_asd_exp = sd(accuracy_asd_exp),
+            n_obs = n(),
+            sem = sd_accuracy_asd_exp/ sqrt(n_obs),
+            ci = sem * 1.96,
+            .groups = "drop")
+
+overall_asd_exp |>
+  kable()
+
+overall_nt_exp = nt_exp |>
+  group_by(Condition) |>
+  summarize(mean_accuracy_nt_exp = mean(accuracy_nt_exp),
+            sd_accuracy_nt_exp = sd(accuracy_nt_exp),
+            n_obs = n(),
+            sem = sd_accuracy_nt_exp/ sqrt(n_obs),
+            ci = sem *1.96)
+
+overall_nt_exp |>
+  kable()
+
+overall_asd_later = asd_later |>
+  group_by(Condition) |>
+  summarize(mean_accuracy_asd_later = mean(accuracy_asd_later),
+            sd_accuracy_asd_later = sd(accuracy_asd_later),
+            n_obs = n(),
+            sem = sd_accuracy_asd_later/sqrt(n_obs),
+            ci = sem * 1.96)
+
+overall_asd_later |>
+  kable()
+
+overall_nt_later = nt_later |>
+  group_by(Condition) |>
+  summarize(mean_accuracy_nt_later = mean(accuracy_nt_later),
+            sd_accuracy_nt_later = sd(accuracy_nt_later),
+            n_obs = n(),
+            sem = sd_accuracy_nt_later/sqrt(n_obs),
+            ci = sem*1.96)
+
+overall_nt_later |>
+  kable()
+
+```
+
+## Create data frame for overall across subject
+
+#### I asked Chat-gpt for this so that I can use facet_grid for the plot.
+
+```{r}
+overall_asd_exp$Time = "exp"
+overall_asd_exp$Group = "A"
+
+overall_nt_exp$Time = "exp"
+overall_nt_exp$Group = "C"
+
+overall_asd_later$Time = "delay"
+overall_asd_later$Group = "A"
+
+overall_nt_later$Time = "delay"
+overall_nt_later$Group = "C"
+
+overall_data <- bind_rows(
+  overall_asd_exp %>% rename(mean_accuracy = mean_accuracy_asd_exp, sd = sd_accuracy_asd_exp),
+  overall_nt_exp %>% rename(mean_accuracy = mean_accuracy_nt_exp, sd = sd_accuracy_nt_exp),
+  overall_asd_later %>% rename(mean_accuracy = mean_accuracy_asd_later, sd = sd_accuracy_asd_later),
+  overall_nt_later %>% rename(mean_accuracy = mean_accuracy_nt_later, sd = sd_accuracy_nt_later)
+)
+
+overall_data$Time = factor(overall_data$Time, levels = c("exp", "delay"))
+
+```
+
+## Create extra data frame for facet_grid
+
+#### When I used facet-grid, the first row was "one week delay" and the second row was "at exposure." I don't know why, so I asked Chat-gpt how to reverse the rows and it provided me this solution.
+
+```{r}
+sg_data = data.frame(
+  Time = c("exp", "exp", "delay", "delay"),
+  Group = c("A", "C", "A", "C"),
+  Condition = c("Homonymy", "Polysemy", "Homonymy", "Polysemy"),
+  label = c("n.s.", "***", "†", "**"),
+  x_position = c(1.5, 1.5, 1.5, 1.5),
+  y_position = c(2.3, 2.3, 2.3, 2.3)
+)
+
+sg_data$Time = factor(sg_data$Time, levels = c("exp", "delay"))
+
+facet_labels = list(
+  Time = c("exp" = "at exposure", "delay" = "one week delay"),
+  Group = c("A" = "Autism spectrum\ngroup", "C" = "Neurotypical\ngroup")
+)
+
+custom_label = function(variable, value) {
+  return(facet_labels[[variable]][value])
+}
+```
+
+## Replicate the plot in the paper
+
+```{r}
+combined_plot = ggplot(overall_data, aes(x = Condition, y = mean_accuracy, fill = Condition)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7, color = "black") +
+  geom_errorbar(aes(ymin = mean_accuracy - ci, ymax = mean_accuracy + ci), 
+                width = 0.1, size = 0.5, color = "black", position = position_dodge(width = 0.9)) +
+  geom_hline(yintercept = 1.125, linetype = "dashed", color = "darkgray", size = 0.5) +
+  geom_text(data = sg_data, 
+            aes(x = x_position, y = y_position, label = label),
+            inherit.aes = FALSE,
+            position = position_dodge(width = 0.9), size = 3, color = "darkgray") +
+  facet_grid(Time ~ Group, labeller = custom_label) +
+  theme_minimal() +
+  labs(
+    x = NULL,
+    y = "Average Correct",
+    fill = "Condition"
+  ) +
+  theme(
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.text.y = element_text(size = 10),
+    axis.ticks.y = element_line(color = "black", size = 1),
+    legend.position = "bottom",
+    legend.title = element_text(size = 15),
+    legend.text = element_text(size = 10),
+    panel.background = element_rect(fill = "white", color = NA),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(color = "darkgray", fill = NA, size = 1),
+    strip.text = element_text(size = 10, face = "plain"),
+    strip.background = element_rect(fill = "gray", color = "black")
+    ) + 
+  scale_y_continuous(
+    limits = c(0, 3),
+    breaks = seq(0, 3, by = 1),
+    expand = c(0.05, 0)
+  )
+
+# This plot may look different from the original plot in the paper, but it might appear more similar to the original once you save it!
+combined_plot
+
+
+ggsave("/Users/lumikang/Downloads/final_plot.jpeg", plot = combined_plot, width = 4, height = 8, dpi = 300)
+
+```
+
+## Strength and weakness of this bar plot
+#### This bar plot illustrates group differences in average performance across conditions (Homonymy vs Polysemy) and groups (Autism spectrum vs Neurotypical) at different time points (at exposure vs one week delay), with error bars indicating variability. Bar plots are familiar and easy to interpret. 
+
+#### However, while bar plot effectively present average accuracy and variability, they lack information about data distribution and individual differences. If showcasing variability or individual differences were priority, box plots or violin charts might be more appropriate. Since the main goal of this paper appear to be highlighting group differences (e.g., overall trends in accuracy across groups and conditions), bar plots remains a fitting choice. Instead of replacing it, I decide to refine the existing bar plots to enhance clarity and readability. 
+
+
+## Improvement
+
+```{r}
+#First, the statistical annotations (n.s., *, ***, †) are helpful but lack a legend or explanation in either the figure or the caption. Adding p-values for each statistical markers and including the explanation on them in the caption would improve accessibility,
+
+# Update the data frame for significance level
+sg_data$label[sg_data$label == "n.s."] = "n.s.\np = 0.69"
+sg_data$label[sg_data$label == "***"] = "***\n p=6.77e−07"
+sg_data$label[sg_data$label == "†"] = "†\np = 0.10"
+sg_data$label[sg_data$label == "**"] ="**\np = 0.005"
+
+# Second, while the color used in the plots (pink and blue) are visually distinct, they do not account for readers with color vision deficiencies. Using patterns (stripes for ASD and solid for NT) in addition to colors to ensure accessibility to all readers. 
+
+library(ggpattern)
+
+revised_plot = ggplot(overall_data, aes(x = Condition, y = mean_accuracy, fill = Condition)) +
+  geom_bar_pattern(
+    stat = "identity", position = "dodge", width = 0.7, color = "black",
+    pattern = ifelse(overall_data$Condition == "Homonymy", "stripe", "none"),
+    pattern_color = "black",
+    pattern_fill = NA,
+    pattern_angle = 45, 
+    pattern_density = 0.05,
+    pattern_spacing = 0.03
+    )+ # Replacing geom_bar into geom_bar_pattern
+  geom_errorbar(aes(ymin = mean_accuracy - ci, ymax = mean_accuracy + ci), 
+                width = 0.1, size = 0.5, color = "black", position = position_dodge(width = 0.9)) +
+  geom_hline(yintercept = 1.125, linetype = "dashed", color = "darkgray", size = 0.5) +
+  geom_text(data = sg_data, 
+            aes(x = x_position, y = y_position, label = label),
+            inherit.aes = FALSE,
+            position = position_dodge(width = 0.9), size = 3, color = "darkgray") +
+  facet_grid(Time ~ Group, labeller = custom_label) + 
+  theme_minimal() +
+  labs(
+    x = NULL,
+    y = "Average Correct",
+    fill = "Condition"
+  ) +
+  theme(
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.text.y = element_text(size = 10),
+    axis.ticks.y = element_line(color = "black", size = 1),
+    legend.position = "bottom",
+    legend.title = element_text(size = 15),
+    legend.text = element_text(size = 10),
+    panel.background = element_rect(fill = "white", color = NA),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(color = "darkgray", fill = NA, size = 1),
+    strip.text = element_text(size = 10, face = "plain"),
+    strip.background = element_rect(fill = "gray", color = "black")
+    ) + 
+  scale_y_continuous(
+    limits = c(0, 3),
+    breaks = seq(0, 3, by = 1),
+    expand = c(0.05, 0)
+  )+
+  guides(
+    fill = guide_legend(override.aes = list(pattern = c("stripe", "none")))
+  )
+
+# Finally, the statistical annotations (n.s., *, ***, †) are helpful but lack a legend or explanation in either the figure or the caption. Adding p-values for each statistical markers and including the explanation on them in the caption would improve accessibility.
+
+library(patchwork)
+
+dashed_text = ggplot() +
+  theme_void() +
+  annotate(
+    "text",
+    x = 0.5, y = 0.5,
+    label = "* Dashed line = chance level 1.125",
+    size = 3, 
+    hjust = 0.5
+  )
+
+revised_plot_dashed = revised_plot / dashed_text +
+  plot_layout(heights = c(10, 0.5))
+
+
+# All done!
+revised_plot_dashed
+
+ggsave("/Users/lumikang/Downloads/new_plot.jpeg", plot = revised_plot_dashed, width = 4, height = 8, dpi = 300)
+
+```
+
