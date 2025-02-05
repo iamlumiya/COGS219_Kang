@@ -11,7 +11,7 @@ csv_file = "/Users/lumikang/Documents/UCSD/25/Evo_Mod/evo_data.csv"
 stimuli_df = pd.read_csv(csv_file)
 
 # Repeat stimuli 4 times to get 48 trials
-stimuli_df = pd.concat([stimuli_df] * 4, ignore_index = True)
+stimuli_df = pd.concat([stimuli_df] * 2, ignore_index = True)
 
 # Shuffle the rows to randomize trial order
 stimuli_df = stimuli_df.sample(frac = 1).reset_index(drop = True) 
@@ -93,7 +93,7 @@ for trial in range(48):
     image_display.setImage(selected_image)
     image_display.draw()
     win.flip()
-    core.wait(2)
+    core.wait(1)
 
     #4 Participants needs to decide whether the object and name match (3000ms max)
     response_wait.draw()

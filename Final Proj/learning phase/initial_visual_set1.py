@@ -66,7 +66,7 @@ for trials, (image_path, name_text) in enumerate(trials):
     
     # Blank space
     win.flip()
-    core.wait(0.5)
+    core.wait(1.5)
     
     # Close the window after 36 trials
     if trials  == 35:
