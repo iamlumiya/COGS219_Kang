@@ -1,16 +1,17 @@
 # Test phase
 # Visual comprehesino - Set 2
 
-from psychopy import visual, event, core, data, logging, gui
-from datetime import datetime
+from psychopy import visual, event, core, data
+import datetime
 import pandas as pd
 import random
+import os
 
 # Load the stimuli CSV file into a dataframe
-csv_file = "/Users/lumikang/Documents/UCSD/25/Evo_Mod/evo_data.csv"
+csv_file = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\evo_data.csv"
 stimuli_df = pd.read_csv(csv_file)
 
-# Repeat stimuli 4 times to get 48 trials
+# Repeat stimuli 8 times to get 96 trials
 stimuli_df = pd.concat([stimuli_df] * 2, ignore_index = True)
 
 # Shuffle the rows to randomize trial order
@@ -19,9 +20,6 @@ stimuli_df = stimuli_df.sample(frac = 1).reset_index(drop = True)
 # Set up the window
 win = visual.Window([800,800], color = "black", units = 'pix', checkTiming = False)
 
-# Create a mouse
-mouse = event.Mouse(visible = True, win = win)
-
 # Load all image paths from the column into a list
 all_images = list(stimuli_df['visual_s2'])
 random.shuffle(all_images)
@@ -29,33 +27,48 @@ random.shuffle(all_images)
 # Initialize a list to store trial data
 response_data = []
 
+# Generate timestamped filename for saving data
+timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+save_dir = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\rec_response"
+os.makedirs(save_dir, exist_ok = True)
+file_name = os.path.join(save_dir, f"recog_s2_{timestamp}.csv")
+
 # Welcome message
-welcome_text = visual.TextStim(win, text = "Click LEFT if match, RIGHT if mismatch.\nClick the mouse to start.", font = 'Arial', color = 'white', pos = (0,0))
+welcome_text = visual.TextStim(win, text = "Click 1 if match, 2 if mismatch.\nPress either 1 or 2 to start.", font = 'Arial', color = 'white', height = 35, pos = (0,0))
 welcome_text.draw()
 win.flip()
 
-# Wait for mouse click with a timeout
+# Wait for mouse click with a timdeout
 start_time = core.getTime()
-while not any(mouse.getPressed()):
-    if core.getTime() - start_time > 10:
-        print("No response within 10 seconds. Exiting.")
-        win.close()
-        core.quit()
+response = None
+
+while core.getTime() - start_time < 10:
+    keys = event.getKeys()
+    if keys:
+        if '1' in keys or '2' in keys:
+            response = keys[0]
+            print(f"Key pressed: {response}")
+            break
+            
+if response is None:
+    print("No response within 10 seconds. Exiting.")
+    win.close()
+    core.quit()
 
 # Prepare text and image components
-fixation_display = visual.TextStim(win, text = "+", font = 'Arial', color = 'white', pos = (0,0))
-name_display = visual.TextStim(win, text ="", font ='Arial', color = 'white', pos =(0,0))
-image_display = visual.ImageStim(win, image = None, size = [400,400], pos = (0,0))
-response_wait = visual.TextStim(win, text = "?", font = 'Arial', color = 'white', pos = (0,0))
-break_display = visual.TextStim(win, text = "Take a short break.\nClick the mouse to continue.", font = 'Arial', color = 'white', pos = (0,0))
+fixation_display = visual.TextStim(win, text = "+", font = 'Arial', color = 'white', height = 35, pos = (0,0))
+name_display = visual.TextStim(win, text ="", font ='Arial', color = 'white', height = 35, pos =(0,0))
+image_display = visual.ImageStim(win, image = None, size = [250,250], pos = (0,0))
+response_wait = visual.TextStim(win, text = "?", font = 'Arial', color = 'white', height = 35, pos = (0,0))
+break_display = visual.TextStim(win, text = "Take a short break.\nPress 1 or 2 to continue.", font = 'Arial', color = 'white', height = 35, pos = (0,0))
 
 # Experiment loop
 terminate_exp = False # Flag to control early termination
 
-for trial in range(48):
+for trial in range(24):
     # Check for an exit key
-    keys = event.getKeys(keyList = ["esc"])
-    if "esc" in keys:
+    keys = event.getKeys(keyList = ["escape"])
+    if "escape" in keys:
         print ("Terminate key pressed. Exiting experiment loop early.")
         break
     
@@ -80,14 +93,10 @@ for trial in range(48):
     core.wait(0.5)
 
     #2 Display the name (2s)
-    image_path = selected_image
-    image_display.setImage(image_path)
-    
     name_display.setText(object_name)
     name_display.draw()
     win.flip()
     core.wait(2)
-
 
     #3 Visual display of the object either matching or not matching that name
     image_display.setImage(selected_image)
@@ -101,26 +110,23 @@ for trial in range(48):
     
     # Start timing precisely when the response prompt appears
     start_time = core.getTime()
-
-    #5 Mouse-clicking
     response = None
     rt = None
 
     while core.getTime () - start_time < 3:
     
         # Check for early exit during the experiment
-        keys = event.getKeys(keyList = ["esc"])
-        if "esc" in keys:
+        keys = event.getKeys(keyList = ["escape", "1", "2"])
+        if "escape" in keys:
             print("Escape key pressed during the experiment. Exiting the experiment early.")
             terminate_exp = True
             break # Exit the while loop and go to saving data
-            
-        buttons, times = mouse.getPressed(getTime = True)
-        if buttons[0]:
+        
+        if "1" in keys:
             response = "match"
             rt = core.getTime() - start_time
             break
-        elif buttons[1]:
+        elif "2" in keys:
             response = "mismatch"
             rt = core.getTime() - start_time
             break
@@ -152,41 +158,40 @@ for trial in range(48):
         'response_time': rt
     })
     
+    # Save progress after every trial
+    response_df = pd.DataFrame(response_data)
+    response_df.to_csv(file_name, index = False) 
+    
     # Insert a break every 12 trials, except after the last trial
-    if (trial + 1) % 12 == 0 and (trial +1) < 48:
+    if (trial + 1) % 12 == 0 and (trial +1) < 24:
         break_display.draw()
         win.flip()
         
-        # Reset the mouse click status before waiting for a new click
-        mouse.clickReset()
+        # Wait for a keypress to contitnue
+        event.waitKeys(keyList = ["1", "2"])
         
-        # Wait for a mouse click to resume
-        while True:
-            buttons, times = mouse.getPressed(getTime = True)
-            if buttons[0] or buttons[1]: # Left or right click
-                break
-            keys = event.getKeys(keyList=["esc"])
-            if "esc" in keys:
-                print ("Terminate key pressed. Exiting experiment loop early.")
-                terminate_exp = True
-                break
+        # Check for early exit
+        keys = event.getKeys(keyList=["escape"])
+        if "escape" in keys:
+            print ("Terminate key pressed. Exiting experiment loop early.")
+            terminate_exp = True
+            break
+            
         core.wait(0.1)
 
 
-# Save the response to a CSV file
-timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-file_name = f'/Users/lumikang/Documents/UCSD/25/Evo_Mod/test phase/Comprehension/response/s2_response_{timestamp}.csv'
+# Final save before exit
 response_df = pd.DataFrame(response_data)
 response_df.to_csv(file_name, index = False)
 print(f"Response data saved to {file_name}")
 
 # Close the window after the experiment
 # Welcome message
-end_text = visual.TextStim(win, text = "Click the mouse to exit.", font = 'Arial', color = 'white', pos = (0,0))
+end_text = visual.TextStim(win, text = "Press either 1 or 2 to exit.", font = 'Arial', color = 'white', pos = (0,0))
 end_text.draw()
 win.flip()
 
 # Wait for mouse click
-while not any(mouse.getPressed()):
-    win.close()
-    core.quit()
+event.getKeys(keyList = ["1", "2"])
+win.close()
+core.quit()
