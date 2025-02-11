@@ -15,12 +15,24 @@ win = visual.Window([800,600],color="gray", units='pix',checkTiming=False)
 placeholder = visual.Rect(win,width=180,height=80, fillColor="lightgray",lineColor="black", lineWidth=6,pos=[0,0])
 word_stim = visual.TextStim(win,text="", height=40, color="black",pos=[0,0])
 instruction = visual.TextStim(win,text="Press the first letter of the ink color", height=20, color="black",pos=[0,-200])
+fixation = visual.TextStim(win, text = "+", color = "black", height = 15, pos = [0, 0])
 
 # Experiment loop
 while True:
     cur_stim = random.choice(stimuli)
     word_stim.setText(cur_stim)
     word_stim.setColor(cur_stim)
+    
+    # Display fixation cross
+    fixation.draw()
+    win.flip()
+    core.wait(0.5)
+    
+    # Blacnk space for 0.5 second
+    placeholder.draw()
+    instruction.draw()    
+    win.flip()
+    core.wait(0.5)
     
     # Display stimuli for 1 second
     placeholder.draw()
