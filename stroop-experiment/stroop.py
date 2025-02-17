@@ -16,6 +16,7 @@ placeholder = visual.Rect(win,width=180,height=80, fillColor="lightgray",lineCol
 word_stim = visual.TextStim(win,text="", height=40, color="black",pos=[0,0])
 instruction = visual.TextStim(win,text="Press the first letter of the ink color", height=20, color="black",pos=[0,-200], autoDraw = True)
 fixation = visual.TextStim(win, text = "+", color = "black", height = 15, pos = [0, 0])
+feedback = visual.TextStim(win, text = "Incorrect", color = "black", height = 40, pos = [0, 0])q
 
 # Experiment loop
 RTs = []
@@ -56,9 +57,18 @@ while True:
         RTs.append(RT)
         print("Response:", key_pressed[0], "Reaction Time:", RT)
         
+    # Display feedback message only for incorrect response
+    if key_pressed[0] == cur_stim[0]:
+        pass
+    elif key_pressed[0] == "q":
+        break
+    else:
+        feedback.draw()
+        win.flip()
+        core.wait(1)
+    
     # Blank space for 0.15 second
     placeholder.draw()
-    instruction.draw()    
     win.flip()
     core.wait(.15)
     
@@ -67,4 +77,3 @@ while True:
 # Exit 
 win.close()
 core.quit()
-
