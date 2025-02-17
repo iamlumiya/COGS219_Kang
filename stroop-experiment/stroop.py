@@ -41,6 +41,15 @@ while True:
     win.flip()
     core.wait(1.0)
     
+    # Wait for response
+    valid_keys = ['r',  'o', 'y', 'g', 'b', 'q']
+    
+    key_pressed = event.waitKeys(keyList = valid_keys)
+    print(key_pressed)
+    
+    if key_pressed[0] == 'q':
+        break
+    
     # Blank space for 0.15 second
     placeholder.draw()
     instruction.draw()    
