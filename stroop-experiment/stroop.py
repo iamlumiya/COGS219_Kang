@@ -14,7 +14,7 @@ win = visual.Window([800,600],color="gray", units='pix',checkTiming=False)
 # Prepare components
 placeholder = visual.Rect(win,width=180,height=80, fillColor="lightgray",lineColor="black", lineWidth=6,pos=[0,0])
 word_stim = visual.TextStim(win,text="", height=40, color="black",pos=[0,0])
-instruction = visual.TextStim(win,text="Press the first letter of the ink color", height=20, color="black",pos=[0,-200])
+instruction = visual.TextStim(win,text="Press the first letter of the ink color", height=20, color="black",pos=[0,-200], autoDraw = True)
 fixation = visual.TextStim(win, text = "+", color = "black", height = 15, pos = [0, 0])
 
 # Experiment loop
@@ -29,8 +29,7 @@ while True:
     core.wait(0.5)
     
     # Blacnk space for 0.5 second
-    placeholder.draw()
-    instruction.draw()    
+    placeholder.draw()   
     win.flip()
     core.wait(0.5)
     
