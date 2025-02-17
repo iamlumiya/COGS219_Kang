@@ -18,6 +18,8 @@ instruction = visual.TextStim(win,text="Press the first letter of the ink color"
 fixation = visual.TextStim(win, text = "+", color = "black", height = 15, pos = [0, 0])
 
 # Experiment loop
+RTs = []
+
 while True:
     cur_stim = random.choice(stimuli)
     word_stim.setText(cur_stim)
@@ -34,6 +36,8 @@ while True:
     core.wait(0.5)
     
     # Display stimuli for 1 second
+    responseTimer = core.Clock()
+    responseTimer.reset()
     placeholder.draw()
     instruction.draw()
     word_stim.draw()
@@ -41,23 +45,26 @@ while True:
     win.flip()
     core.wait(1.0)
     
-    # Wait for response
-    valid_keys = ['r',  'o', 'y', 'g', 'b', 'q']
-    
+    # Wait for response and record RT    
+    valid_keys = ["r", "o", "y", "g", "b", "q"]
     key_pressed = event.waitKeys(keyList = valid_keys)
-    print(key_pressed)
     
-    if key_pressed[0] == 'q':
+    if key_pressed[0] == "q":
         break
-    
+    else:
+        RT = round(responseTimer.getTime()) * 1000
+        RTs.append(RT)
+        print("Response:", key_pressed[0], "Reaction Time:", RT)
+        
     # Blank space for 0.15 second
     placeholder.draw()
     instruction.draw()    
     win.flip()
     core.wait(.15)
+    
+    event.clearEvents()
 
-    # Exit code
-    if event.getKeys(['q']):
-        win.close()
-        core.quit()
+# Exit 
+win.close()
+core.quit()
 
