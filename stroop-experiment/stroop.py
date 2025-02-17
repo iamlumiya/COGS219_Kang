@@ -7,6 +7,13 @@ from psychopy import visual,event,core,gui
 
 # Create stimuli
 stimuli = ['red', 'orange', 'yellow', 'green', 'blue']
+trials = ['congruent', 'incongruent']
+
+# Make color incongruent
+def make_incongruent(color):
+    incongruent_colors = [stimulus for stimulus in stimuli if stimulus != color]
+    random_incongruent_colors = random.choice(incongruent_colors)
+    return random_incongruent_colors
 
 # Open a window
 win = visual.Window([800,600],color="gray", units='pix',checkTiming=False)
@@ -24,8 +31,14 @@ RTs = []
 
 while True:
     cur_stim = random.choice(stimuli)
+    trial_type = random.choice(trials)
+    
     word_stim.setText(cur_stim)
-    word_stim.setColor(cur_stim)
+    if trial_type == 'incongruent':
+        cur_color = make_incongruent(cur_stim)
+    else:
+        cur_color = cur_stim
+    word_stim.setColor(cur_color)
     
     # Display fixation cross
     fixation.draw()
@@ -65,7 +78,7 @@ while True:
         print("Response:", key_pressed[0], "Reaction Time:", RT)
     
         # Display feedback message only for incorrect response
-        if key_pressed[0] == cur_stim[0]:
+        if key_pressed[0] == cur_color[0]:
             pass
         elif key_pressed[0] == "q":
             break
