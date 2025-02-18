@@ -33,14 +33,16 @@ def generate_trials(subj_code, seed, num_repetitions = 25):
     # Write code to loop through creating trials here
     trial_data = []
     for i in range(num_repetitions):
-        for cur_trial_type in trial_types:
-            for cur_orientation in orientations:
-                cur_word = random.choice(colors)
-                if cur_trial_type == "incongruent":
-                    cur_color = make_incongruent(cur_word, colors)
-                else:
-                    cur_color = cur_word
-                trial_data.append([subj_code, seed, cur_word, cur_color, cur_trial_type, cur_orientation])
+        cur_trial_type = random.choice(trial_types)
+        cur_orientation = random.choice(orientations)
+        cur_word = random.choice(colors)
+        
+        if cur_trial_type == "incongruent":
+            cur_color = make_incongruent(cur_word, colors)
+        else:
+            cur_color = cur_word
+        
+        trial_data.append([subj_code, seed, cur_word, cur_color, cur_trial_type, cur_orientation])
     
     # Shuffle the list
     random.shuffle(trial_data)
