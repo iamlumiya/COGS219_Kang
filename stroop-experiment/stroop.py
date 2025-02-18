@@ -58,10 +58,22 @@ trial_path = os.path.join(os.getcwd(), 'trials', runtime_vars['subj_code']+'_tri
 trial_list = import_trials(trial_path)
 print(trial_list)
 
+# Open data file and write header
+try:
+    os.mkdir('data')
+    print('Data directory did not exist. Created data/')
+except FileExistsError:
+    pass
+separator = ","
+data_file = open(os.path.join(os.getcwd(), 'data', runtime_vars['subj_code']+'_data.csv'), 'w')
+header = separator.join(['subj_code', 'seed', 'word', 'color', 'trial_type', 'orientation', 'trial_num', 'response', 'is_correct', 'rt'])
+data_file.write(header+'\n')
+
 # Experiment loop
 RTs = []
 stimuli = ['red', 'orange', 'yellow', 'green', 'blue']
 trial_types = ['congruent', 'incongruent']
+trial_num = 1
 
 for cur_trial in trial_list:
     
@@ -106,28 +118,47 @@ for cur_trial in trial_list:
         win.flip()
         core.wait(1)
         RT = 0
+        is_correct = 0
+        response = "NA"
     else: 
         if key_pressed[0] == "q":
             break
             
         RT = round(responseTimer.getTime() * 1000)
         RTs.append(RT)
-        print("Response:", key_pressed[0], "Reaction Time:", RT)
     
         # Display feedback message only for incorrect response
         if key_pressed[0] == cur_color[0]:
+            is_correct = 1
+            response = key_pressed[0]
             pass
         elif key_pressed[0] == "q":
             break
+            
         else:
+            is_correct = 0
+            response = key_pressed[0]
             feedback.draw()
             win.flip()
             core.wait(1)
+    
+    # Write a response
+    response_list = [cur_trial[_] for _ in cur_trial]
+    print(response_list)
+    
+    response_list.extend([trial_num, response, is_correct, RT])
+    responses = map(str, response_list)
+    print(response_list)
+    line = separator.join([str(i) for i in response_list])
+    data_file.write(line + '\n')
     
     # Blank space for 0.15 second
     placeholder.draw()
     win.flip()
     core.wait(.15)
+    
+    # Increment trial number
+    trial_num +=1
     
     event.clearEvents()
 
