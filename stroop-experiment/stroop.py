@@ -4,6 +4,7 @@ import sys
 import os
 import random
 from psychopy import visual,event,core,gui
+from generate_trials import generate_trials
 
 # Function for collecting runtime variables
 def get_runtime_vars(vars_to_get, order, exp_version = "Stroop"):
@@ -15,53 +16,25 @@ def get_runtime_vars(vars_to_get, order, exp_version = "Stroop"):
 
 # Make color incongruent
 def make_incongruent(color, stimuli):
-    incongruent_colors = [stimulus for stimulus in stimuli if stimulus != color]
+    incongruent_colorsq = [stimulus for stimulus in stimuli if stimulus != color]
     random_incongruent_colors = random.choice(incongruent_colors)
     return random_incongruent_colors
 
-# Create a generate trials file
-def generate_trials(subj_code, seed, num_repetitions = 25):
+# Import trials
+def import_trials (trial_filename, col_names = None, separator = ","):
+    trial_file = open(trial_filename, 'r')
     
-    # Define key parameters
-    colors = ['red', 'orange', 'yellow', 'green', 'blue']
-    trial_types = ["congruent", "incongruent"]
-    orientations = ["upright", "upside_down"]
-    num_repetitions = int(num_repetitions)
-    
-    # Random seed
-    random.seed(int(seed))
-    
-    # Ensure 'trials' directory exists
-    os.makedirs('trials', exist_ok = True)
-    
-    # Open a trial file
-    trial_file = open(os.path.join(os.getcwd(), 'trials', f"{subj_code}_trials.csv"), 'w')
-    separator = ","
-    header = separator.join(["subj_code", "seed", "word", "color", "trial_type", "orientation"])
-    trial_file.write(header+'\n')
-    
-    # Write code to loop through creating trials here
-    trial_data = []
-    for i in range(num_repetitions):
-        for cur_trial_type in trial_types:
-            for cur_orientation in orientations:
-                cur_word = random.choice(colors)
-                if cur_trial_type == "incongruent":
-                    cur_color = make_incongruent(cur_word, colors)
-                else:
-                    cur_color = cur_word
-                trial_data.append([subj_code, seed, cur_word, cur_color, cur_trial_type, cur_orientation])
-    
-    # Shuffle the list
-    random.shuffle(trial_data)
-    
-    # Write the tirals to the trials file
-    for cur_trial in trial_data:
-        trial_file.write(separator.join(map(str, cur_trial)) + '\n')
+    if col_names is None:
+        col_names = trial_file.readline().rstrip().split(separator)
         
-    # Close the file
-    trial_file.close()
-        
+    trials_list = []
+    for cur_trial in trial_file:
+        cur_trial = cur_trial.rstrip().split(separator)
+        assert len(cur_trial) == len(col_names)
+        trial_dict = dict(zip(col_names, cur_trial))
+        trials_list.append(trial_dict)
+    return trials_list
+
 # Open a window
 win = visual.Window([800,600],color="gray", units='pix',checkTiming=False)
 
@@ -77,19 +50,34 @@ feedback2 = visual.TextStim(win, text = "Too Slow", color = "black", height = 40
 order = ['subj_code', 'seed', 'num_reps']
 runtime_vars = get_runtime_vars({'subj_code': 'stroop_101', 'seed': 101, 'num_reps': 25}, order)
 
+# Generate a trial list
+generate_trials(runtime_vars['subj_code'], runtime_vars['seed'], runtime_vars['num_reps'])
+
+# Read in trials 
+trial_path = os.path.join(os.getcwd(), 'trials', runtime_vars['subj_code']+'_trials.csv')
+trial_list = import_trials(trial_path)
+print(trial_list)
+
 # Experiment loop
 RTs = []
 stimuli = ['red', 'orange', 'yellow', 'green', 'blue']
 trial_types = ['congruent', 'incongruent']
 
-while True:
-    cur_stim = random.choice(stimuli)
-    trial_type = random.choice(trial_types)
+for cur_trial in trial_list:
     
-    word_stim.setText(cur_stim)
-    cur_color = make_incongruent(cur_stim, stimuli) if trial_type == 'incongruent' else cur_stim
+    cur_word = cur_trial['word']
+    cur_color = cur_trial['color']
+    trial_type = cur_trial['trial_type']
+    cur_ori = cur_trial['orientation']
+    
+    word_stim.setText(cur_word)
     word_stim.setColor(cur_color)
     
+    if cur_ori == 'upside_down':
+        word_stim.setOri(180)
+    else:
+        word_stim.setOri(0)
+
     # Display fixation cross
     fixation.draw()
     win.flip()
@@ -108,7 +96,6 @@ while True:
     word_stim.draw()
     
     win.flip()
-    core.wait(1.0)
     
     # Wait for response and record RT    
     valid_keys = ["r", "o", "y", "g", "b", "q"]
