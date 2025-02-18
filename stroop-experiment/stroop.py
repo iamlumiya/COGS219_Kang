@@ -5,16 +5,51 @@ import os
 import random
 from psychopy import visual,event,core,gui
 
-# Create stimuli
-stimuli = ['red', 'orange', 'yellow', 'green', 'blue']
-trials = ['congruent', 'incongruent']
-
-# Make color incongruent
-def make_incongruent(color):
-    incongruent_colors = [stimulus for stimulus in stimuli if stimulus != color]
-    random_incongruent_colors = random.choice(incongruent_colors)
-    return random_incongruent_colors
-
+# Create a generate trials file
+def generate_trials(subj_code, seed, num_repetitions = 25):
+    
+    # Define key parameters
+    colors = ['red', 'orange', 'yellow', 'green', 'blue']
+    trial_types = ["congruent", "incongruent"]
+    orientations = ["upright", "upside_down"]
+    num_repetitions = int(num_repetitions)
+    
+    # Random seed
+    random.seed(int(seed))
+    
+    # Make color incongruent
+    def make_incongruent(color, stimuli):
+        incongruent_colors = [stimulus for stimulus in stimuli if stimulus != color]
+        random_incongruent_colors = random.choice(incongruent_colors)
+        return random_incongruent_colors
+    
+    # Ensure 'trials' directory exists
+    os.makedirs('trials', exist_ok = True)
+    
+    # Open a trial file
+    trial_file = open(os.path.join(os.getcwd(), 'trials', f"{subj_code}+_trials.csv"), 'w')
+    header = separator.join(["subj_code", "seed", "word", "color", "triall_type", "orientation"])
+    trial_file.write(header+'\n')
+    
+    # Write code to loop through creating trials here
+    trail_data = []
+    for i in range(num_repetitions):
+        for cur_trial_type in trial_types:
+            for cur_orientation in orientations:
+                cur_word = random.choice(colors)
+                if cur_trial_type == "incongruent":
+                    cur_color = make_incongurent(cur_word, colors)
+                else:
+                    cur_color = cur_word
+                trial_data.append([subj_code, seed, cur_word, cur_color, cur_trial_type, cur_orientation])
+    
+    # Shuffle the list
+    random.shuffle(trial_data)
+    
+    # Write the tirals to the trials file
+    for cur_trial in trial_data:
+        trail_file.write(separator.join(map(str, cur_trial)) + '\n')
+        
 # Open a window
 win = visual.Window([800,600],color="gray", units='pix',checkTiming=False)
 
@@ -28,16 +63,15 @@ feedback2 = visual.TextStim(win, text = "Too Slow", color = "black", height = 40
 
 # Experiment loop
 RTs = []
+colors = ['red', 'orange', 'yellow', 'green', 'blue']
+trial_types = ['congruent', 'incongruent']
 
 while True:
-    cur_stim = random.choice(stimuli)
-    trial_type = random.choice(trials)
+    cur_stim = random.choice(colors)
+    trial_type = random.choice(trial_types)
     
     word_stim.setText(cur_stim)
-    if trial_type == 'incongruent':
-        cur_color = make_incongruent(cur_stim)
-    else:
-        cur_color = cur_stim
+    cur_color = make_incongruent(cur_stim, colors) if trial_types == 'incongruent' else cur_stim
     word_stim.setColor(cur_color)
     
     # Display fixation cross
@@ -93,6 +127,10 @@ while True:
     core.wait(.15)
     
     event.clearEvents()
+
+
+# Close the file
+trial_file.close()
 
 # Exit 
 win.close()
