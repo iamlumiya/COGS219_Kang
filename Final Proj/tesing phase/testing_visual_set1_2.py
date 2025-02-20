@@ -13,7 +13,7 @@ if platform == "darwin": #Mac OS
     save_dir = "/Users/lumikang/Documents/UCSD/25/Evo_Mod/FIN/data"
 else: 
     csv_file = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\evo_data.csv"
-    save_dir = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\testing phase\data"
+    save_dir = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\FIN\response"
     
 # Function to save response data to CSV
 all_responses = []
@@ -112,7 +112,7 @@ def create_block():
 all_blocks = [create_block() for _ in range (n)]
 
 # Welcome message
-show_message("Press 1 if match, 2 if mismatch.\n\nPress the space bar to start.")
+show_message("Press LEFT arrow key if match, RIGHT arrow key if mismatch.\n\nPress the space bar to start.")
 
 # Prepare text and image components
 fixation_display = visual.TextStim(win, text = "+", font = 'Arial', color = 'white', height = 35, pos = (0,0))
@@ -174,18 +174,18 @@ for block_num, block in enumerate(all_blocks):
 
         while responseTimer.getTime() < 3:
             # Check for early exit during the experiment
-            keys = event.getKeys(keyList = ["escape", "1", "2"])
+            keys = event.getKeys(keyList = ["escape", "left", "right"])
             
             if "escape" in keys:
                 print("Escape key pressed during the experiment. Exiting the experiment early.")
                 terminate_exp = True
                 break 
             
-            if "1" in keys:
+            if "left" in keys:
                 response = "match"
                 rt = responseTimer.getTime()
                 break
-            elif "2" in keys:
+            elif "right" in keys:
                 response = "mismatch"
                 rt = responseTimer.getTime()
                 break
@@ -273,7 +273,7 @@ core.wait(0.1)
 allowed_keys = list("abcdefghijklmnopqrstuvwxyz") + ["backspace", "space", "escape"]
 
 # Welcome message
-show_message("Type the correct name of the object and press the SPACE BAR to move next.\n\nPress the space bar to start.")
+show_message("Type the correct name of the object and press the SPACE BAR to submit the answer.\n\nPress the space bar to start.")
 
 # Prepare text and image component
 fixation_display = visual.TextStim(win, text = "+", font = 'Arial', color = 'white', height = 35, pos = (0,0))
