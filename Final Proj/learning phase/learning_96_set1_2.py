@@ -13,7 +13,7 @@ if platform == "darwin": # macOS
     excel_file_path = "/Users/lumikang/Documents/UCSD/25/Evo_Mod/FIN/data"
     csv_file = "/Users/lumikang/Documents/UCSD/25/Evo_Mod/evo_data.csv"
 else: # window
-    excel_file_path = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\learning phase\data"
+    excel_file_path = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\FIN\response"
     csv_file = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\evo_data.csv"
 
 # Function to save response data to Excel
