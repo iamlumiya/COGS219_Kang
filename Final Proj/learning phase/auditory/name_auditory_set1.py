@@ -19,7 +19,7 @@ else: #window
 # Generate timestamped file name
 timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 os.makedirs(excel_file_path, exist_ok = True)
-file_name = os.path.join(excel_file_path, f"initial_aud_{timestamp}.csv")
+file_name = os.path.join(excel_file_path, f"name_aud__set1_{timestamp}.csv")
 
 # Load the stimuli CSV file into a dataframe
 stimuli_df = pd.read_csv(csv_file)
@@ -37,15 +37,15 @@ win = visual.Window([800,800], color = "black", units = 'pix', checkTiming = Fal
 mouse = event.Mouse(visible = True, win = win)
 
 # Welcome message
-welcome_text = visual.TextStim(win, text = "Click the mouse to start.", font = 'Arial', color = 'white', height = 35, pos = (0,0))
+welcome_text = visual.TextStim(win, text = "Choose the correct name that corresponds to the image.\n Press a number key (1, 2, 3, or 4) to listen to the names and click a number to finalize your answer. \n\n Click the mouse to start.", font = 'Arial', color = 'white', height = 35, pos = (0,0))
 welcome_text.draw()
 win.flip()
 
-# Wait for mouse click with a timeout (10 seconds)
+# Wait for mouse click with a timeout (15 seconds)
 start_time = core.getTime()
 while not any(mouse.getPressed()):
-    if core.getTime() - start_time > 10:
-        print("No response within 10 seconds. Exiting.")
+    if core.getTime() - start_time > 15:
+        print("No response within 15 seconds. Exiting.")
         win.close()
         core.quit()
         
@@ -88,20 +88,26 @@ for block in range(n):
         distractor_names = random.sample([name for name in stimuli_df['auditory_s1'] if name != correct_name], 3)
         
         # 3. Form the name set (1 correct + 3 distractors) and shuffle
-        name_choices = distractor_names + correct_name
+        name_choices = distractor_names + [correct_name]
         random.shuffle(name_choices)
         
+        # Load audio files for the four choices
+        audio_sounds = [sound.Sound(name) for name in name_choices]
+                
         # 4. Display an image
         image_display.image = object_image
         image_display.draw()
         win.flip()
         core.wait(2)
         
-        # 5. Display name audio files with numbers
-        for stim, 
+        # 5. Display four numbers on the screen
+        for stim in number_stims:
+            stim.draw()
         
+        image_display.draw()
+        win.flip()
         
-        # 6. Wait for participants to respond by clicking
+        # Initialize response variables
         responseTimer = core.Clock()
         responseTimer.reset()
         
@@ -110,25 +116,35 @@ for block in range(n):
         rt = None
         is_correct = None
         
+        # 6. Listening phase
         while response is None:
+            keys = event.getKeys(keyList = ["1", "2", "3", "4", "escape"])
+            
+            if "escape" in keys:
+                terminate_exp = True
+                break
+                
+            for key in keys:
+                if key in ["1", "2", "3", "4"]:
+                    index = int(key) - 1
+                    audio_sounds[index].play()
+                    core.wait(1.5)
+                    
+        # 7. Wait for mouse click to finalize response
             mouse.clickReset()
             buttons, times = mouse.getPressed(getTime = True)
             
-            if "escape" in event.getKeys(keyList = ["escape"]):
-                terminate_exp = True
-                break
-            
             if buttons[0]:
-                for i stim in enumerate(num_stims):
+                for i, stim in enumerate(number_stims):
                     if stim.contains(mouse):
-                        selected_name = name_choice[i]
+                        selected_name = name_choices[i]
                         is_correct = (selected_name == correct_name)
                         rt = responseTimer.getTime()
                         response = selected_name
                         break
                         
-            # If no response within 3 seconds, mark it as "no response"
-            if responseTimer.getTime() > 3:
+            # If no response within 10 seconds, mark it as "no response"
+            if responseTimer.getTime() > 10:
                 response = "no response"
                 selected_name = "no response"
                 rt = 0
@@ -175,8 +191,8 @@ for block in range(n):
         
         # Break after every two blocks, except the last one
         if (block+1) % 2 == 0 and block + 1 < n:
-        break_display.draw()
-        win.flip()
+            break_display.draw()
+            win.flip()
         
         # Wait for a response
         while not any(mouse.getPressed()):
