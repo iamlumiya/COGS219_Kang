@@ -19,7 +19,7 @@ else: #window
 # Generate timestamped file name
 timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 os.makedirs(excel_file_path, exist_ok = True)
-file_name = os.path.join(excel_file_path, f"initial_aud_{timestamp}.csv")
+file_name = os.path.join(excel_file_path, f"initial_aud_set_1_{timestamp}.csv")
 
 # Load the stimuli CSV file into a dataframe
 stimuli_df = pd.read_csv(csv_file)
