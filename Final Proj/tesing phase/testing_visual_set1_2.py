@@ -1,4 +1,4 @@
-# Testing phase
+# Testing phase - Visual - Set 1
 
 from psychopy import visual, event, core, data
 import datetime
@@ -13,7 +13,7 @@ if platform == "darwin": #Mac OS
     save_dir = "/Users/lumikang/Documents/UCSD/25/Evo_Mod/FIN/data"
 else: 
     csv_file = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\evo_data.csv"
-    save_dir = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\FIN\response"
+    save_dir = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\testing phase\data"
     
 # Function to save response data to CSV
 all_responses = []
@@ -40,20 +40,15 @@ win = visual.Window(fullscr = True, screen = 0, color = "black", units = "pix", 
 mouse = event.Mouse(visible = True, win = win)
 
 # Function to show a message and wait for the space bar pressed
-def show_message(text, timeout = 10):
+def show_message(text):
     msg = visual.TextStim(win, text = text, font = 'Arial', color = 'white', height = 35, pos = (0, 0))
     msg.draw()
     win.flip()
-    start_time = core.getTime()
+
     while True:
         keys = event.getKeys()
-        
         if "space" in keys:
             break
-        if core.getTime() - start_time > timeout:
-            print(f"No response within {timeout} seconds. Exiting.")
-            win.close()
-            core.quit()
         core.wait(0.1)
         
 # Visual comprehesion - Set 1
@@ -143,24 +138,28 @@ for block_num, block in enumerate(all_blocks):
         selected_image = trial['image']
         is_match = trial['match']
       
-        #1 Each trial begins with a fixation cross (0.5s)
+        #1 Each trial begins with a fixation cross (500ms)
         fixation_display.draw()
         win.flip()
         core.wait(0.5)
 
-        #2 Display the name (2s)
+        #2 Display the name (200ms)
         name_display.setText(selected_name)
         name_display.draw()
         win.flip()
-        core.wait(1)
+        core.wait(0.2)
 
-        #3 Visual display of the object either matching or not matching that name (1s)
+        #3 Visual display of the object either matching or not matching that name (200ms)
         image_display.setImage(selected_image)
         image_display.draw()
         win.flip()
-        core.wait(1)
+        core.wait(0.2)
 
-        #4 Participants needs to decide whether the object and name match (3000ms max)
+        #4 Blank space (800ms)
+        win.flip()
+        core.wait(0.8)
+
+        #5 Participants needs to decide whether the object and name match (3000ms max)
         response_wait.draw()
         win.flip()
         event.clearEvents()
@@ -270,10 +269,10 @@ current_phase = "Written_production"
 core.wait(0.1)
 
 # Define allowed keys: alphabets, backspace, return, and escape
-allowed_keys = list("abcdefghijklmnopqrstuvwxyz") + ["backspace", "space", "escape"]
+allowed_keys = list("abcdefghijklmnopqrstuvwxyz") + ["backspace", "return", "escape"]
 
 # Welcome message
-show_message("Type the correct name of the object and press the SPACE BAR to submit the answer.\n\nPress the space bar to start.")
+show_message("Type the correct name of the object and press the ENTER key to submit your answer.\nYou must submit answer to move to the next.\n\nPress the space bar to start.")
 
 # Prepare text and image component
 fixation_display = visual.TextStim(win, text = "+", font = 'Arial', color = 'white', height = 35, pos = (0,0))
@@ -315,8 +314,7 @@ for block in range(n2):
         image_display.image = object_image
         image_display.draw()
         win.flip()
-        core.wait(2)
-   
+        
         # 4. Wait for participants to type name
         typed_name = ""
         responseTimer = core.Clock()
@@ -338,29 +336,18 @@ for block in range(n2):
                 break
             
             for key in keys:
-                if key == "space":
+                if key == "return":
                     break
                 elif key == "backspace":
                     typed_name = typed_name[:-1]
                 elif key in list("abcdefghijklmnopqrstuvwxyz"):
                     typed_name += key
                     
-            if "space" in keys or terminate_exp:
+            if "return" in keys or terminate_exp:
                 break
                 
         rt = responseTimer.getTime()
         is_correct = typed_name.strip().lower() == correct_name.strip().lower()
-        
-        # If no response within 5 seconds, mark it as "no response"
-        if rt > 5:
-            typed_name = "no response"
-            rt = 0
-            is_correct = False
-        
-        win.flip()
-    
-        if terminate_exp:
-            break
         
         # 5. Display fixation cross; inter-trial interval
         fixation_display.draw()
@@ -410,7 +397,7 @@ save_to_csv()
 
 # Close the window after the experiment
 # End message
-show_message("Press the space bar to exit.")
+show_message("You've completed all the training phases.\n\nPress the space bar to exit.")
 
 win.close()
 core.quit()

@@ -1,31 +1,59 @@
-# Testing phase
-# Auditory Comprehension
+# Testing phase - Auditory - Set 1
 
-from psychopy import visual, core, event, data, sound
+from psychopy import visual, event, core, data, sound
+import datetime
 import pandas as pd
 import random
-import datetime
 import os
 from sys import platform
 
-# Set file path
-if platform == "darwin": # macOS
-    excel_file_path = "/Users/lumikang/Documents/UCSD/25/Evo_Mod/test phase/data"
+# Load the stimuli CSV file into a dataframe]
+if platform == "darwin": #Mac OS
     csv_file = "/Users/lumikang/Documents/UCSD/25/Evo_Mod/evo_data.csv"
-else: #window
-    excel_file_path = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\testing phase\data"
+    save_dir = "/Users/lumikang/Documents/UCSD/25/Evo_Mod/FIN/data"
+else: 
     csv_file = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\evo_data.csv"
+    save_dir = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\testing phase\data"
     
-# Generate timestamped file name
-timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-os.makedirs(excel_file_path, exist_ok = True)
-file_name = os.path.join(excel_file_path, f"comp_aud_set1_{timestamp}.csv")
-
-# Load the stimuli CSV file into a dataframe
-stimuli_df = pd.read_csv(csv_file)
-
 # Function to save response data to CSV
 all_responses = []
+current_phase = None
+
+def save_to_csv():
+    
+    if not all_responses:
+        return
+        
+    df = pd.DataFrame(all_responses)
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    response_file = os.path.join(save_dir, f"testing_V_s1_72_{timestamp}.csv")
+
+    # Save to CSV
+    df.to_csv(response_file, index = False, lineterminator = "\n")
+    print(f"Saved all responses to {response_file}")
+    
+# Laod stimuli CSV file
+stimuli_df = pd.read_csv(csv_file)
+
+# Set up the window
+win = visual.Window(fullscr = True, screen = 0, color = "black", units = "pix", checkTiming = False)
+mouse = event.Mouse(visible = True, win = win)
+
+# Function to show a message and wait for the space bar pressed
+def show_message(text):
+    msg = visual.TextStim(win, text = text, font = 'Arial', color = 'white', height = 35, pos = (0, 0))
+    msg.draw()
+    win.flip()
+
+    while True:
+        keys = event.getKeys()
+        if "space" in keys:
+            break
+        core.wait(0.1)
+
+# Auditory comprehension
+print("Starting Auditory Comprehension Phase...")
+current_phase = "Auditory_comprehension"
 
 # Shuffle the rows to randomize trial order
 stimuli_df = stimuli_df.sample(frac = 1).reset_index(drop = True)
@@ -78,31 +106,9 @@ def create_block():
 # Generate all blocks
 all_blocks = [create_block() for _ in range (n)]
 
-# Set up the window
-win = visual.Window([800, 800], color = "black", units = 'pix', checkTiming = False)
-
 # Welcome message
-welcome_text = visual.TextStim(win, text = "Press LEFT arrow key if match, RIGHT arrow key if mismatch.\n\nPress the space bar to start.", font = 'Arial', color = "white", height = 35, pos = (0, 0))
-welcome_text.draw()
-win.flip()
+show_message("Press LEFT arrow key if match, RIGHT arrow key if mismatch.\n\nPress the space bar to start.")
 
-# Wait for keyboard press with a timdeout
-start_time = core.getTime()
-response = None
-
-while core.getTime() - start_time < 15:
-    keys = event.getKeys()
-    if keys:
-        if "space" in keys:
-            response = keys[0]
-            print(f"Key pressed: {response}")
-            break
-            
-if response is None:
-    print("No response within 15 seconds. Exiting.")
-    win.close()
-    core.quit()
-    
 # Prepare text and image components
 fixation_display = visual.TextStim(win, text = "+", font = 'Arial', color = 'white', height = 35, pos = (0, 0))
 image_display = visual.ImageStim(win, image = None, size = [250, 250], pos = (0, 0))
@@ -116,10 +122,11 @@ block_pair_trial_count = 0
 
 for block_num, block in enumerate(all_blocks):
     correct_responses = 0
-    block_trial_count = 0
-    event.clearEvents()
+    block_trial_count = len(block)
     
     for trial_num, trial in enumerate(block):
+        event.clearEvents()
+        
         selected_name = trial['name']
         selected_image = trial['image']
         is_match = trial['match']
@@ -136,7 +143,7 @@ for block_num, block in enumerate(all_blocks):
         core.wait(0.5)
         
         # 2. Audio play with a fixation cross (200ms)
-        name_audio = sound.Sound(selected_name, stopTime = 2)
+        name_audio = sound.Sound(selected_name, stopTime = 0.9)
         name_audio.play()
         fixation_display.draw()
         win.flip()
@@ -152,12 +159,12 @@ for block_num, block in enumerate(all_blocks):
         win.flip()
         core.wait(0.8)
         
-        # 4. Participants needs to decide whether the object and name match (3000ms max)
+        # 5. Participants needs to decide whether the object and name match (3000ms max)
         response_wait.draw()
         win.flip()
         event.clearEvents()
         
-        # 4-1. Start timing precisely when the response prompt appear
+        # 5-1. Start timing precisely when the response prompt appear
         responseTimer = core.Clock()
         responseTimer.reset()
         
@@ -195,13 +202,14 @@ for block_num, block in enumerate(all_blocks):
         if (response == "match" and is_match) or (response == "mismatch" and not is_match):
             correct_responses += 1
             
-        # 5. 1-second blank screen
+        # 6. 1-second blank screen
         fixation_display.draw()
         win.flip()
         core.wait(1)
     
         # Record the response data
         all_responses.append({
+            'phase': current_phase,
             'block': block_num + 1,
             'trial': trial_num + 1,
             'object_name': selected_name,
@@ -210,17 +218,11 @@ for block_num, block in enumerate(all_blocks):
             'response': response,
             'response_time': rt * 1000 if rt else 0
         })
+
+        # Update cumulativ accuracy tracking
+        block_pair_correct_responses += correct_responses
+        block_pair_trial_count += block_trial_count
     
-        # Save progress after every trial
-        response_df = pd.DataFrame(all_responses)
-        response_df.to_csv(file_name, index = False)
-        
-        # Accumulate trial count
-        block_trial_count += 1
-        
-    # Update cumulativ accuracy tracking
-    block_pair_correct_responses += correct_responses
-    block_pair_trial_count += block_trial_count
     
     # Insert a break every 2 blocks with a feedback message, except after the last one
     if (block_num + 1) % 2 == 0 and block_num < len(all_blocks) -1:
@@ -242,20 +244,24 @@ for block_num, block in enumerate(all_blocks):
             pass
                     
         core.wait(0.1)
+        
+        # Reset block_pair accuracy tracking
+        block_pair_correct_responses = 0
         event.clearEvents()
-    
-# Final save before exit
-response_df = pd.DataFrame(all_responses)
-response_df.to_csv(file_name, index = False)
-print(f"Response data saved to {file_name}")
-
-# Close the window after the experiment
+        
 # End message
-end_text = visual.TextStim(win, text = "Press the space bar to exit.", font = 'Arial', color = 'white', pos = (0,0))
-end_text.draw()
-win.flip()
+print("Completed Auditory Comprehension Phase.")
+show_message("Press the space bar to move to the next phase.")
+core.wait(0.1)
 
-# Wait for mouse click
-event.getKeys(keyList = ["space"])
-win.close()
-core.quit()
+event.clearEvents()
+
+# Spoken Production
+print("Starting Spoken Production Phase...")
+current_phase = "Spoken_production"
+core.wait(0.1)
+
+
+
+
+

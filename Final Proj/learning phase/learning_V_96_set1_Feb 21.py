@@ -1,4 +1,4 @@
-# Combined Learning phase (Initial[24] - Recog[24] - Name[24])
+# Combined Learning phase - Visual - Set 1 (Initial[24] - Recog[24] - Initial[24] - Name[24])
 
 from psychopy import visual, core, event
 import pandas as pd
@@ -16,7 +16,7 @@ else: # window
     excel_file_path = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\FIN\response"
     csv_file = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\evo_data.csv"
 
-# Function to save response data to CSV
+# Function to save response data to Excel
 all_responses = []
 current_phase = None
 
@@ -27,37 +27,32 @@ def save_to_csv():
         
     df = pd.DataFrame(all_responses)
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    response_file = os.path.join(excel_file_path, f"learning_V_s1_72_{timestamp}.csv")
+    response_file = os.path.join(excel_file_path, f"learning_V_s1_96_{timestamp}.csv")
 
     # Save to CSV
     df.to_csv(response_file, index = False, lineterminator = "\n")
     print(f"Saved all responses to {response_file}")
-    
+
 # Laod stimuli CSV file
 stimuli_df = pd.read_csv(csv_file)
-
+            
 # Set up the window
 win = visual.Window(fullscr = True, screen = 0, color = "black", units = "pix", checkTiming = False)
 mouse = event.Mouse(visible = True, win = win)
 
 # Function to show a message and wait for a mouse click
-def show_message(text, timeout = 10):
+def show_message(text):
     msg = visual.TextStim(win, text = text, font = 'Arial', color = 'white', height = 35, pos = (0, 0))
     msg.draw()
     win.flip()
-    start_time = core.getTime()
+    
     while not any(mouse.getPressed()):
-        if core.getTime() - start_time > timeout:
-            print (f"No response within {timeout} seconds. Exiting.")
-            win.close()
-            core.quit()
         core.wait(0.1)
 
-
-# Initial Presentation - Visual - Set 1
+# Initial Presentation Block - Visual - Set 1
 # Welcome message
 print("Starting Initial Presentation Phase...")
-show_message("Thank you for participating this experiment.\nClick the mouse to start.")
+show_message("Welcome to Brain & Cognition Lab.\n\nClick the mouse to start the training.")
 
 # Prepare text and image components
 current_phase = "Initial_Presentation"
@@ -67,6 +62,7 @@ image_display = visual.ImageStim(win, image = None, size = [250,250], pos = (0,0
 
 # Set the number of repetitions
 n = 2
+mouse = event.Mouse(visible = False, win = win)
 
 for block in range(n):
     
@@ -105,6 +101,7 @@ for block in range(n):
         core.wait(1.5)
 
 # End message
+mouse = event.Mouse(visible = True, win = win)
 show_message("Click the mouse to move to the next phase.")
 print("Completed Initial Presentation Phase.\n")
 core.wait(0.1)
@@ -113,11 +110,11 @@ event.clearEvents()
 
 # Recognition Training - Visual - Set 1
 # Welcome message
-current_phase = "Recognition_training"
 print("Starting Recognition Training Phase...")
+current_phase = "Recognition_training"
 core.wait(0.1)
 show_message("Choose the correct image of the name on the screen.\n\n Click the mouse to start.")
-
+        
 # Define the image and text positions
 image_positions = [(-200, 200), (200, 200), (-200, -200), (200, -200)]
 
@@ -146,7 +143,7 @@ for block in range(n2):
         
         # Check for an exit key
         if "escape" in event.getKeys(keyList=["escape"]):
-            core.quit()
+            break
         
         #1. Select a random name and its corresponding image
         object_name = row['name_s1']
@@ -159,7 +156,7 @@ for block in range(n2):
         image_paths = distractor_images + [correct_image]
         random.shuffle(image_paths)
         
-        #4. Display images with numbers
+        #4. Display images
         for stim, img_path in zip(image_stims, image_paths):
             stim.setImage(img_path)
             stim.draw()
@@ -179,30 +176,43 @@ for block in range(n2):
         responseTimer = core.Clock()
         responseTimer.reset()
 
+        response_given = False
         response = None
         selected_image = None
         rt = None
         is_correct = False
         
         start_time = core.getTime()
-        while core.getTime() - start_time < 3:
+        
+        while core.getTime() - start_time < 5:
             if "escape" in event.getKeys():
                 core.quit()
             
-            if mouse.getPressed()[0]: # IF left click detected
+            mouse_clicks = mouse.getPressed()
+            
+            if mouse_clicks[0]:# IF left click detected
                 for i, stim in enumerate(image_stims):
                     if stim.contains(mouse):
                        selected_image = image_paths[i]
                        is_correct = (selected_image == correct_image)
                        rt = responseTimer.getTime()
                        response = selected_image
+                       response_given = True
                        break
-                       
-                break
-        core.wait(0.1)
+                
+                if response_given:
+                    break
+                    
+            core.wait(0.1)
             
         #7. Provide feedback
-        feedback_display.setText("Correct" if is_correct else "Incorrect")
+        if not response_given:
+            feedback_display.setText("Too Slow")
+            selected_image = None
+            rt = np.nan
+        else:
+            feedback_display.setText("Correct" if is_correct else "Incorrect")
+            
         feedback_display.draw()
         win.flip()
         core.wait(1.5)
@@ -226,7 +236,7 @@ for block in range(n2):
             'response_time': rt * 1000 if rt else np.nan
         })
         
-    event.clearEvents()
+        event.clearEvents()
     
     
     # Break after every two blocks, except the last one
@@ -243,10 +253,68 @@ for block in range(n2):
 
 # End message
 event.clearEvents()
+show_message("Click the mouse to move to the next phase.")
 print("Completed Recognition Training Phase.\n")
+core.wait(0.1)
+
+# Initial Presentation Block - Visual - Set 1
+print("Starting Initial Presentation Phase...")
+current_phase = "Initial_Presentation_2"
+
+# Prepare text and image components
+name_display = visual.TextStim(win, text ="", font ='Arial', color = 'white', height = 35, pos =(0,150))
+image_display = visual.ImageStim(win, image = None, size = [250,250], pos = (0,0))
+
+# Set the number of repetitions
+n = 2
+
+mouse = event.Mouse(visible = False, win = win)
+
+
+for block in range(n):
+    
+    # Shuffle the stimuli order for n blocks
+    block_stimuli = stimuli_df.sample(frac = 1).reset_index(drop = True)
+    
+    for index, row in block_stimuli.iterrows():
+        
+        # Check for an exit key
+        if "escape" in event.getKeys(keyList = ["escape"]):
+            break
+            
+        # 1. Select a random pair of an image and a name
+        object_image = row['visual_s1']
+        correct_name = row['name_s1']
+                
+        # 2. Display an image with the name for 2 seconds
+        image_display.image = object_image
+        name_display.text = correct_name
+        image_display.draw()
+        name_display.draw()
+        win.flip()
+        core.wait(2)
+        
+        # Record the response data       
+        all_responses.append({
+            'phase': current_phase,
+            'block': block + 1,
+            'trial': index + 1,
+            'object_name': correct_name,
+            'object_image': object_image
+        })
+
+        # Blank space
+        win.flip()
+        core.wait(1.5)
+
+# End message
+mouse = event.Mouse(visible = True, win = win)
+print("Completed Initial Presentation Phase.\n")
 show_message("Click the mouse to move to the next phase.")
 core.wait(0.1)
- 
+
+event.clearEvents()
+
 # Name learning - Visual - Set 1
 # Welcome message
 print("Starting Name Learning Phase...")
@@ -254,14 +322,13 @@ current_phase = "Name_Learning"
 show_message("Choose the correct name for the image on the screen.\n\nClick the mouse to start.")
 
 # Define the text position
-name_positions = [(0, -50), (0, -100), (0, -150), (0, -200)]  
+name_positions = [(-200, 200), (200, 200), (-200, -200), (200, -200)]
 
 # Prepare text and image components
 name_stims = [visual.TextStim(win, text = "", font = "Arial", height = 35, color = "white", pos = name_positions[i]) for i in range(4)]
-image_display = visual.ImageStim(win, image = None, size = (250, 250), pos = (0, 100))
+image_display = visual.ImageStim(win, image = None, size = (250, 250), pos = (0, 0))
 feedback_display = visual.TextStim(win, text = "", font = 'Arial', height = 35, color = "white", pos = (0, 0))
 break_display = visual.TextStim(win, text = "Take a short break.\nClick the mouse to continue.", font = 'Arial', color = 'white', height = 35, pos = (0, 0))
-
 
 # Set the number of repetitions
 n3 = 2
@@ -271,7 +338,7 @@ terminate_exp = False
 event.clearEvents()
 
 # Reset mouse position to center
-mouse.setPos((0, 100))
+mouse.setPos((0, 0))
 
 for block in range(n3):
     
@@ -313,6 +380,7 @@ for block in range(n3):
         responseTimer = core.Clock()
         responseTimer.reset()
         
+        response_given = False
         response = None
         selected_name = None
         rt = None
@@ -320,23 +388,50 @@ for block in range(n3):
         
         start_time = core.getTime()
         
-        while core.getTime() - start_time < 3:
+        while core.getTime() - start_time < 5:
             if "escape" in event.getKeys():
                 core.quit()
                 
-            if mouse.getPressed()[0]:
+            mouse_clicks = mouse.getPressed()
+                
+            if mouse_clicks[0]:
                 for i, stim in enumerate(name_stims):
-                    if stim.contains(mouse):
+                    mouse_x, mouse_y = mouse.getPos()
+                    
+                    stim_x, stim_y = stim.pos
+                    box_width = stim.height * 3
+                    box_height = stim.height
+                    
+                    new_width = box_width * 1.5
+                    new_height = box_height * 1.5
+                    
+                    left_bound = stim_x - new_width / 2
+                    right_bound = stim_x + new_width / 2
+                    top_bound = stim_y + new_height / 2
+                    bottom_bound = stim_y - new_height / 2
+                    
+                    if left_bound <= mouse_x <= right_bound and bottom_bound <= mouse_y <= top_bound:
                         selected_name = name_choices[i]
                         is_correct = (selected_name == correct_name)
                         rt = responseTimer.getTime()
                         response = selected_name
+                        response_given = True
                         break
-                break
+                        
+                if response_given:
+                    break
+                    
             core.wait(0.1)
-                
+        
         # 7. Provide feedback
-        feedback_display.setText("Correct" if is_correct else "Incorrect")
+        if not response_given:
+            feedback_display.setText("Too Slow")
+            selected_image = None
+            rt = np.nan
+
+        else:
+            feedback_display.setText("Correct" if is_correct else "Incorrect")
+        
         feedback_display.draw()
         win.flip()
         core.wait(1.5)
@@ -346,7 +441,7 @@ for block in range(n3):
         core.wait(1)
         
         # Reset mouse position to the center
-        mouse.setPos((0, 100))
+        mouse.setPos((0, 0))
         
         # Record the response data
         all_responses.append({
@@ -359,7 +454,7 @@ for block in range(n3):
             'correct': is_correct,
             'response_time': rt * 1000 if rt else np.nan
         })
-        
+
     event.clearEvents()
     
     # Break after every two blocks, except the last one
