@@ -26,7 +26,7 @@ def save_to_csv():
         
     df = pd.DataFrame(all_responses)
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    response_file = os.path.join(save_dir, f"testing_V_s1_72_{timestamp}.csv")
+    response_file = os.path.join(save_dir, f"testing_V_s1_{timestamp}.csv")
 
     # Save to CSV
     df.to_csv(response_file, index = False, lineterminator = "\n")
@@ -107,7 +107,7 @@ def create_block():
 all_blocks = [create_block() for _ in range (n)]
 
 # Welcome message
-show_message("Press LEFT arrow key if match, RIGHT arrow key if mismatch.\n\nPress the space bar to start.")
+show_message("Press LEFT arrow key if match, RIGHT arrow key if mismatch when "?" appears on the screen. \n\nPress the space bar to start."
 
 # Prepare text and image components
 fixation_display = visual.TextStim(win, text = "+", font = 'Arial', color = 'white', height = 35, pos = (0, 0))

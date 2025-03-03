@@ -1,4 +1,4 @@
-# Testing phase - Visual - Set 1
+# Testing phase - Visual - Set 2
 
 from psychopy import visual, event, core, data
 import datetime
@@ -26,7 +26,7 @@ def save_to_csv():
         
     df = pd.DataFrame(all_responses)
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    response_file = os.path.join(save_dir, f"testing_V_s1_72_{timestamp}.csv")
+    response_file = os.path.join(save_dir, f"testing_V_s2_{timestamp}.csv")
 
     # Save to CSV
     df.to_csv(response_file, index = False, lineterminator = "\n")
@@ -63,7 +63,7 @@ n = 4
 
 # Generate a balanced block of trials with randomized match/mismatch
 def create_block():
-    unique_names = list(stimuli_df['name_s1'].unique())
+    unique_names = list(stimuli_df['name_s2'].unique())
     random.shuffle(unique_names)
     
     # Split the names into 6 for match and 6 for mismatch
@@ -74,22 +74,22 @@ def create_block():
     mismatch_trials = []
 
     # Load all image path
-    all_images = list(stimuli_df['visual_s1'])
+    all_images = list(stimuli_df['visual_s2'])
     
     # Create match trials: use the correct image
     for name in match_names:
-        row = stimuli_df[stimuli_df['name_s1'] == name].iloc[0]
+        row = stimuli_df[stimuli_df['name_s2'] == name].iloc[0]
         match_trials.append({
         'name': name,
-        'image': row['visual_s1'],
+        'image': row['visual_s2'],
         'match': True
         })
         
     # Create mismatch trials: use an incorrect image
     for name in mismatch_names:
-        row = stimuli_df[stimuli_df['name_s1'] == name].iloc[0]
+        row = stimuli_df[stimuli_df['name_s2'] == name].iloc[0]
         # Select an image that is not the correct one
-        incorrect_images = [img for img in all_images if img !=row['visual_s1']]
+        incorrect_images = [img for img in all_images if img !=row['visual_s2']]
         mismatched_image = random.choice(incorrect_images)
         mismatch_trials.append({
         'name': name,
@@ -107,7 +107,7 @@ def create_block():
 all_blocks = [create_block() for _ in range (n)]
 
 # Welcome message
-show_message("Press LEFT arrow key if match, RIGHT arrow key if mismatch.\n\nPress the space bar to start.")
+show_message("Press LEFT arrow key if match, RIGHT arrow key if mismatch when "?" appears on the screen. \n\nPress the space bar to start."
 
 # Prepare text and image components
 fixation_display = visual.TextStim(win, text = "+", font = 'Arial', color = 'white', height = 35, pos = (0,0))
@@ -300,8 +300,8 @@ for block in range(n2):
             break
     
         # 1. Select a random image and its corresponding name
-        object_image = row['visual_s1']
-        correct_name = row['name_s1']
+        object_image = row['visual_s2']
+        correct_name = row['name_s2']
         
         random.shuffle([correct_name])
         

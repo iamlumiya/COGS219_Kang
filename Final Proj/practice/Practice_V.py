@@ -351,7 +351,7 @@ show_message("You've completed the practice for learning phases. \n\nYou can tak
 
 #Testing phase
 print("Starting Testing phase - Visual Comprehension...")
-show_message("[Practice - Testing Phase]\n Press LEFT arrow key if match, RIGHT arrow key if mismatch.\n\nPress the space bar to start.")
+show_message("[Practice - Testing Phase]\n Press LEFT arrow key if match, RIGHT arrow key if mismatch when "?" appears on the screen. \n\nPress the space bar to start.")
 
 # Generate a balanced block of trials with randomized match/mismatch
 def create_block():

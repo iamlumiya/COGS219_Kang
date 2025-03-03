@@ -1,4 +1,4 @@
-# Combined Learning Phase - Auditory - Set 1
+# Combined Learning Phase - Auditory - Set 2
 # Initial(24) - Recognition(24) - Initial(24) - Name (24)
 
 from psychopy import visual, core, event, sound
@@ -28,7 +28,7 @@ def save_to_csv():
         
     df = pd.DataFrame(all_responses)
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    response_file = os.path.join(excel_file_path, f"learning_A_s1_96_{timestamp}.csv")
+    response_file = os.path.join(excel_file_path, f"learning_A_s2_{timestamp}.csv")
 
     # Save to CSV
     df.to_csv(response_file, index = False, lineterminator = "\n")
@@ -75,8 +75,8 @@ for block in range(n):
             break
             
         # 1. Select a random pair of an image and a name
-        object_image = row['visual_s1']
-        correct_name = row['auditory_s1']
+        object_image = row['visual_s2']
+        correct_name = row['auditory_s2']
         
         # 2. Display an image with the name for 2 seconds
         image_display.image = object_image
@@ -144,11 +144,11 @@ for block in range(n2):
             break
             
         #1. Select a random name and its corresponding image
-        object_name = row['auditory_s1']
-        correct_image = row['visual_s1']
+        object_name = row['auditory_s2']
+        correct_image = row['visual_s2']
         
         #2. Select three distractor images (excluding the correct image)
-        distractor_images = random.sample([img for img in stimuli_df['visual_s1'] if img != correct_image], 3)
+        distractor_images = random.sample([img for img in stimuli_df['visual_s2'] if img != correct_image], 3)
         
         #3. Form the image set (1 correct + 3 distractors) and shuffle
         image_paths = distractor_images + [correct_image]
@@ -277,8 +277,8 @@ for block in range(n):
             break
             
         # 1. Select a random pair of an image and a name
-        object_image = row['visual_s1']
-        correct_name = row['auditory_s1']
+        object_image = row['visual_s2']
+        correct_name = row['auditory_s2']
         
         # 2. Display an image with the name for 2 seconds
         image_display.image = object_image
@@ -316,7 +316,7 @@ current_phase = "Name_Learning"
 show_message("Choose the correct name for the image on the screen.\n\nClick the mouse to start.")
 
 # Define the text position
-number_positions = [(-200, 200), (200, 200), (-200, -200), (200, -200)]
+number_positions = [(-200, 200), (200, 200), (200, -200), (-200, -200)]
 
 # Prepare text and image components
 number_stims = [visual.TextStim(win, text = f"({i+1})", font ='Arial',color = "white", height = 35, pos = number_positions[i]) for i in range(4)]
@@ -345,11 +345,11 @@ for block in range(n3):
             break
             
         # 1. Select a random image and its corresponding name
-        object_image = row['visual_s1']
-        correct_name = row['auditory_s1']
+        object_image = row['visual_s2']
+        correct_name = row['auditory_s2']
         
         # 2. Select three distractor names (excluding the correct name)
-        distractor_names = random.sample([name for name in stimuli_df['auditory_s1'] if name != correct_name], 3)
+        distractor_names = random.sample([name for name in stimuli_df['auditory_s2'] if name != correct_name], 3)
         
         # 3. Form the name set (1 correct + 3 distractors) and shuffle
         name_choices = distractor_names + [correct_name]

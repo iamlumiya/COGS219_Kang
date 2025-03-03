@@ -12,7 +12,7 @@ if platform == "darwin": # macOS
     excel_file_path = "/Users/lumikang/Documents/UCSD/25/Evo_Mod/FIN/data"
     csv_file = "/Users/lumikang/Documents/UCSD/25/Evo_Mod/evo_data.csv"
     word_audio = "/Users/lumikang/Documents/UCSD/25/Evo_Mod/speech/word.wav"
-    beep_audio = "/Users/lumikang/Documents/UCSD/25/Evo_Mod/soundeffect/incorrect_sound.wav"
+    beep_audio = "/Users/lumikang/Documents/UCSD/25/Evo_Mod/speech/daneo.wav"
 
 
 else: # window
@@ -402,7 +402,7 @@ show_message("You've completed the practice for learning phases. \n\nYou can tak
 
 # Testing phase
 print("Starting Testing phase - Auditory Comprehension...")
-show_message("[Practice - Testing Phase]\n Press LEFT arrow key if match, RIGHT arrow key if mismtach.\n\n Press the space bar to start.")
+show_message("[Practice - Testing Phase]\n Press LEFT arrow key if match, RIGHT arrow key if mismatch when "?" appears on the screen. \n\nPress the space bar to start.")
 
 # Generate a balanced block of trials with randomized match/mismatch
 def create_block():
