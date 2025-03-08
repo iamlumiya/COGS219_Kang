@@ -6,6 +6,9 @@ import pandas as pd
 import random
 import os
 from sys import platform
+import sounddevice as sd
+import soundfile as sf
+import numpy as np
 
 # Load the stimuli CSV file into a dataframe]
 if platform == "darwin": #Mac OS
@@ -107,7 +110,7 @@ def create_block():
 all_blocks = [create_block() for _ in range (n)]
 
 # Welcome message
-show_message("Press LEFT arrow key if match, RIGHT arrow key if mismatch when "?" appears on the screen. \n\nPress the space bar to start."
+show_message("Press LEFT arrow key if match, RIGHT arrow key if mismatch when \"?\" appears on the screen. \n\nPress the space bar to start.")
 
 # Prepare text and image components
 fixation_display = visual.TextStim(win, text = "+", font = 'Arial', color = 'white', height = 35, pos = (0, 0))
@@ -261,7 +264,139 @@ print("Starting Spoken Production Phase...")
 current_phase = "Spoken_production"
 core.wait(0.1)
 
+# Welcome message
+show_message("Speak the correct name alound.\n\n Press the space bar to start.")
 
+# Prepare text and image component
+fixation_display = visual.TextStim(win, text = "+", font = 'Arial', color = 'white', height = 35, pos = (0,0))
+image_display = visual.ImageStim(win, image = None, size = [250, 250], pos = (0, 0))
+response_wait = visual.TextStim(win, text = "?", font = 'Arial', color = 'white', height = 35, pos = (0,0))
 
+# Extract the filename without the extension
+csv_filename = os.path.splitext(os.path.basename(csv_file))[0]
 
+# Define the folder path inside the save directory
+folder_path = os.path.join(save_dir, csv_filename)
+
+# Create the directory if it doesn't exist
+os.makedirs(folder_path, exist_ok=True)
+
+# Set the number of repetitions
+n2 = 4
+
+# Experiment loop
+terminate_exp = False
+event.clearEvents()
+
+for block in range(n2):
+    # Shuffle the stimuli order for n2 blocks
+    block_stimuli = stimuli_df.sample(frac = 1).reset_index(drop = True)
+    
+    for index, row in block_stimuli.iterrows():
+        # Check for an exit key
+        if "escape" in event.getKeys():
+            terminate_exp = True
+            core.quit()
+            
+        # 1. Select a random image and its corresponding name
+        object_name = row['auditory_s1']
+        correct_image = row['visual_s1']
+        
+        random.shuffle([correct_image])
+        
+        # 2. Display fixation cross
+        fixation_display.draw()
+        win.flip()
+        core.wait(0.5)
+        
+        # 3. Display the image (2000ms)
+        image_display.image = correct_image
+        image_display.draw()
+        win.flip()
+        core.wait(2)
+        
+        # Recording settings
+        fs = 44100
+        duration = 3
+        audio_filename = os.path.join(folder_path, f"response_sp_{block+1}_{index+1}.wav")
+        
+        # 4. Wait for the response (3000ms) + record the voice
+        # Set default color to white
+        response_wait.color = 'white'
+        response_wait.draw()
+        win.flip()
+        
+        # Change color to green when recording starts
+        response_wait.color = [-0.61, 0.61, -0.61]
+        response_wait.draw()
+        win.flip()
+        
+        # Start recording
+        response_start = core.getTime()
+        recording = sd.rec(int(duration* fs), samplerate = fs, channels = 1, dtype = "int16")
+        sd.wait()
+        response_end = core.getTime()
+        
+        sf.write(audio_filename, recording, fs)
+        
+        # Compute response time
+        rt = response_end - response_start
+        
+        # Change color to red for 0.2 seconds after recording finishes
+        response_wait.color = 'red'
+        response_wait.draw()
+        win.flip()
+        core.wait(0.2)
+        
+        # Stop recording
+        core.wait(3)
+        
+        # 5. Blank space (1000ms)
+        fixation_display.draw()
+        win.flip()
+        core.wait(1)
+        
+        # Record the response data 
+        all_responses.append({
+            'block': block + 1,
+            'trial': index + 1,
+            'object_name': object_name,
+            'selected_image': correct_image,
+            'response': audio_filename,
+            'response_time': rt * 1000 if rt else 0
+        })
+        
+        event.clearEvents()
+        
+    if terminate_exp:
+        core.quit()
+        
+    # Break after every 12 trials, except after the last trial
+    if (block + 1) % 2 == 0 and block + 1 <n2:
+        break_display = visual.TextStim(win, text = "Take a short break.\n\n Press the space bar to continue.", font = 'Arial', color = 'white', height = 35, pos = (0, 0))
+        break_display.draw()
+        win.flip()
+        
+        core.wait(0.1)
+        
+        # Wait for a keypress to continue
+        while True:
+            keys = event.getKeys(keyList = ["space", "escape"])
+            if "escape" in keys:
+                terminate_exp = True
+                break
+            elif "space" in keys:
+                break
+        event.clearEvents()
+
+# Final save before exit
+print("Completed Spoken Production Phase.")
+save_to_csv()
+
+# Close the window after the experiment
+# End message
+show_message("You've completed all the testing phases.\n\n Press the space bar to exit.")
+
+win.close()
+core.quit()
 

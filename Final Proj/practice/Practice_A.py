@@ -6,11 +6,15 @@ import datetime
 import os
 import pandas as pd
 from sys import platform
+import sounddevice as sd
+import soundfile as sf
+import numpy as np
 
 # Set file path
 if platform == "darwin": # macOS
     excel_file_path = "/Users/lumikang/Documents/UCSD/25/Evo_Mod/FIN/data"
     csv_file = "/Users/lumikang/Documents/UCSD/25/Evo_Mod/evo_data.csv"
+    save_dir = "/Users/lumikang/Documents/UCSD/25/Evo_Mod/FIN/data"
     word_audio = "/Users/lumikang/Documents/UCSD/25/Evo_Mod/speech/word.wav"
     beep_audio = "/Users/lumikang/Documents/UCSD/25/Evo_Mod/speech/daneo.wav"
 
@@ -18,6 +22,7 @@ if platform == "darwin": # macOS
 else: # window
     excel_file_path = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\FIN\response"
     csv_file = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\evo_data.csv"
+    save_dir = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\testing phase\data"
     word_audio = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\audio\converted_word.wav"
     beep_audio = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\audio\converted_beep.wav"
 
@@ -402,7 +407,7 @@ show_message("You've completed the practice for learning phases. \n\nYou can tak
 
 # Testing phase
 print("Starting Testing phase - Auditory Comprehension...")
-show_message("[Practice - Testing Phase]\n Press LEFT arrow key if match, RIGHT arrow key if mismatch when "?" appears on the screen. \n\nPress the space bar to start.")
+show_message("[Practice - Testing Phase]\n Press LEFT arrow key if match, RIGHT arrow key if mismatch when \"?\" appears on the screen. \n\nPress the space bar to start.")
 
 # Generate a balanced block of trials with randomized match/mismatch
 def create_block():
@@ -503,9 +508,85 @@ core.wait(.1)
     
 
 # Spoken production
+print("Starting Spoken Production...")
+core.wait(0.1)
+show_message("Speak the correct name aloud when \"?\" turns green.\n\n Press the space bar to start.")
 
+# Prepare text and image component
+fixation_display = visual.TextStim(win, text = "+", font = 'Arial', color = 'white', height = 35, pos = (0,0))
+image_display = visual.ImageStim(win, image = None, size = [250, 250], pos = (0, 0))
+response_wait = visual.TextStim(win, text = "?", font = 'Arial', color = 'white', height = 35, pos = (0,0))
 
+# Define the folder path inside the save directory
+folder_path = os.path.join(save_dir, "practice")
+os.makedirs(folder_path, exist_ok = True)
+
+# Experiment loop
+random.shuffle(selected_images)
+counter = 1
+terminate_exp = False
+
+for image in selected_images:
+    if terminate_exp:
+        core.quit()
+        
+    # Display fixation cross
+    fixation_display.draw()
+    win.flip()
+    core.wait(0.5)
+    
+    # Display the image (2000ms)
+    image_display.image = correct_image
+    image_display.draw()
+    win.flip()
+    core.wait(2)
+    
+    # Recording settings
+    fs = 44100
+    duration = 3
+    
+    # Wait for the response (3000ms) + record the voice
+    # Set default color to white
+    response_wait.color = 'white'
+    response_wait.draw()
+    win.flip()
+    
+    # Change color to green when recording starts
+    response_wait.color = [-0.61, 0.61, -0.61]
+    response_wait.draw()
+    win.flip()
+    
+    # Start recording
+    response_start = core.getTime()
+    recording = sd.rec(int(duration* fs), samplerate = fs, channels = 1, dtype = "int16")
+    sd.wait()
+    response_end = core.getTime()
+    
+    audio_filename = os.path.join(folder_path, f"practice_sp_{counter}.wav")
+    sf.write(audio_filename, recording, fs)
+    
+    # Change color to red for 0.2 seconds after recording finishes
+    response_wait.color = 'red'
+    response_wait.draw()
+    win.flip()
+    core.wait(0.2)
+    
+    # Stop recording
+    core.wait(3)
+    
+    # Blank space (1000ms)
+    fixation_display.draw()
+    win.flip()
+    core.wait(1)
+    
+    # Increment the counter for the next file
+    counter += 1
+    
+    event.clearEvents()
+
+# End message
+print("Completed Written Production Phase.")
+show_message("You've completed all the practice for the testing phase.\n Press the space bar to exit.")
 
 win.close()
 core.quit()
-    
