@@ -1,4 +1,4 @@
-# Combined Learning Phase - Auditory - Set 2
+# Combined Learning Phase - Auditory - Set 1
 # Initial(24) - Recognition(24) - Initial(24) - Name (24)
 
 from psychopy import visual, core, event, sound
@@ -6,36 +6,96 @@ import pandas as pd
 import random
 import datetime
 import os
+import csv
 import numpy as np
 from sys import platform
 
-# Set file path
-if platform == "darwin": # macOS
-    excel_file_path = "/Users/lumikang/Documents/UCSD/25/Evo_Mod/FIN/data"
-    csv_file = "/Users/lumikang/Documents/UCSD/25/Evo_Mod/evo_data.csv"
-else: # window
-    excel_file_path = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\FIN\response"
-    csv_file = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\evo_data.csv"
+# Get the current working directory
+current_dir = os.getcwd()
 
-# Function to save response data to Excel
+# Define the CSV file path
+csv_file = os.path.join(current_dir, "stimuli.csv")
+
+# Define directions to search for image and audio files
+image_dir = os.path.join(current_dir, "image")
+audio_dir = os.path.join(current_dir, "speech")
+
+# Function to find a file in a given directory
+def find_file(directory, filename):
+    for root, _, files in os.walk(directory):
+        if filename in files:
+            return os.path.join(root, filename)
+    return None
+
+# Initialize an empty dictionary
+data_dict = {}
+
+# Read the CSV file
+with open (csv_file, mode = 'r', encoding = 'utf-8') as file:
+    reader = csv.DictReader(file)
+    for row in reader:
+        stimuli = row["name_s1"]
+        
+        # Extract just the file name 
+        visual_filename = os.path.basename(row["visual_s1"])
+        audio_filename = os.path.basename(row["auditory_s1"])
+        
+        # Find the actual file paths in the specified directory
+        visual_path = find_file(image_dir, visual_filename)
+        audio_path = find_file(audio_dir, audio_filename)
+        
+        # Store in dictionary
+        data_dict[stimuli] = {
+            "name": row["name_s1"],
+            "object": row["item_s1"],
+            "visual": visual_path if visual_path else "Not found",
+            "audio": audio_path if audio_path else "Not found",
+            }
+
+# Convert the dictionary into a DataFrame
+stimuli_df = pd.DataFrame.from_dict(data_dict, orient = 'index')
+
+# Function to save response data to CSV
 all_responses = []
 current_phase = None
 
 def save_to_csv():
-    
     if not all_responses:
         return
         
     df = pd.DataFrame(all_responses)
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    response_file = os.path.join(excel_file_path, f"learning_A_s2_{timestamp}.csv")
-
+    output_file_path = os.path.join(current_dir, "response")
+    response_file = os.path.join(output_file_path, f"learning_A_s1_{timestamp}.csv")
+    
     # Save to CSV
-    df.to_csv(response_file, index = False, lineterminator = "\n")
+    if platform == "darwin":
+        df.to_csv(response_file, index = False, lineterminator = "\n")
+    else:
+        df.to_csv(response_file, index = False, line_terminator = "\n")
     print(f"Saved all responses to {response_file}")
+    
 
-# Laod stimuli CSV file
-stimuli_df = pd.read_csv(csv_file)
+# Function to map selected responses correctly
+def map_selected(selected):
+    if pd.isna(selected) or not isinstance(selected, str):
+        return selected
+    
+    selected_basename = os.path.basename(selected)
+    
+    # Check if selected is an audio file -> map to "name"
+    for entry in data_dict.values():
+        if entry["audio"] and os.path.basename(entry["audio"]) == selected_basename:
+            return entry["name"]
+            
+    # Check if selected is an image file -> map to "object"
+    for entry in data_dict.values():
+        if entry["visual"] and os.path.basename(entry["visual"]) == selected_basename:
+            return entry["object"]
+            
+    # If no match found, return as is
+    return selected
+
 
 # Set up the window
 win = visual.Window(fullscr = True, screen = 0, color = "black", units = "pix", checkTiming = False)
@@ -75,8 +135,8 @@ for block in range(n):
             break
             
         # 1. Select a random pair of an image and a name
-        object_image = row['visual_s2']
-        correct_name = row['auditory_s2']
+        object_image = row['visual']
+        correct_name = row['audio']
         
         # 2. Display an image with the name for 2 seconds
         image_display.image = object_image
@@ -91,8 +151,8 @@ for block in range(n):
             'phase': current_phase,
             'block': block + 1,
             'trial': index + 1,
-            'object_name': correct_name,
-            'object_image': object_image
+            'object_name': data_dict[row["name"]]["name"],
+            'object_image': data_dict[row["name"]]["object"]
         })
         
         # Blank space
@@ -144,11 +204,11 @@ for block in range(n2):
             break
             
         #1. Select a random name and its corresponding image
-        object_name = row['auditory_s2']
-        correct_image = row['visual_s2']
+        object_name = row['audio']
+        correct_image = row['visual']
         
         #2. Select three distractor images (excluding the correct image)
-        distractor_images = random.sample([img for img in stimuli_df['visual_s2'] if img != correct_image], 3)
+        distractor_images = random.sample([img for img in stimuli_df['visual'] if img != correct_image], 3)
         
         #3. Form the image set (1 correct + 3 distractors) and shuffle
         image_paths = distractor_images + [correct_image]
@@ -227,9 +287,9 @@ for block in range(n2):
             'phase': current_phase,
             'block': block + 1,
             'trial': index + 1,
-            'object_name': object_name,
-            'object_image': correct_image,
-            'selected': selected_image,
+            'object_name': data_dict[row["name"]]["name"],
+            'object_image': data_dict[row["name"]]["object"],
+            'selected': map_selected(selected_image),
             'correct': is_correct,
             'response_time': rt * 1000 if rt else np.nan
         })
@@ -277,8 +337,8 @@ for block in range(n):
             break
             
         # 1. Select a random pair of an image and a name
-        object_image = row['visual_s2']
-        correct_name = row['auditory_s2']
+        object_image = row['visual']
+        correct_name = row['audio']
         
         # 2. Display an image with the name for 2 seconds
         image_display.image = object_image
@@ -293,8 +353,8 @@ for block in range(n):
             'phase': current_phase,
             'block': block + 1,
             'trial': index + 1,
-            'object_name': correct_name,
-            'object_image': object_image
+            'object_name': data_dict[row["name"]]["name"],
+            'object_image': data_dict[row["name"]]["object"]
         })
         
         # Blank space
@@ -345,11 +405,11 @@ for block in range(n3):
             break
             
         # 1. Select a random image and its corresponding name
-        object_image = row['visual_s2']
-        correct_name = row['auditory_s2']
+        object_image = row['visual']
+        correct_name = row['audio']
         
         # 2. Select three distractor names (excluding the correct name)
-        distractor_names = random.sample([name for name in stimuli_df['auditory_s2'] if name != correct_name], 3)
+        distractor_names = random.sample([name for name in stimuli_df['audio'] if name != correct_name], 3)
         
         # 3. Form the name set (1 correct + 3 distractors) and shuffle
         name_choices = distractor_names + [correct_name]
@@ -511,9 +571,9 @@ for block in range(n3):
             'phase': current_phase,
             'block': block + 1,
             'trial': index + 1,
-            'object_name': correct_name,
-            'object_image': object_image,
-            'selected': selected_name,
+            'object_name': data_dict[row["name"]]["name"],
+            'object_image': data_dict[row["name"]]["object"],
+            'selected': map_selected(selected_name),
             'correct': is_correct,
             'response_time': rt * 1000 if rt else 0
         })

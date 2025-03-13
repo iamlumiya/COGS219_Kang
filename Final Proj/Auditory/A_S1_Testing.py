@@ -5,38 +5,97 @@ import datetime
 import pandas as pd
 import random
 import os
+import csv
 from sys import platform
 import sounddevice as sd
 import soundfile as sf
 import numpy as np
 
-# Load the stimuli CSV file into a dataframe]
-if platform == "darwin": #Mac OS
-    csv_file = "/Users/lumikang/Documents/UCSD/25/Evo_Mod/evo_data.csv"
-    save_dir = "/Users/lumikang/Documents/UCSD/25/Evo_Mod/FIN/data"
-else: 
-    csv_file = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\evo_data.csv"
-    save_dir = r"C:\Users\l5kang\Documents\Lumi\Evo_mod\testing phase\data"
-    
+# Get the current working directory
+current_dir = os.getcwd()
+
+# Define the CSV file path
+csv_file = os.path.join(current_dir, "stimuli.csv")
+
+# Define directions to search for image and audio files
+image_dir = os.path.join(current_dir, "image")
+audio_dir = os.path.join(current_dir, "speech")
+
+# Function to find a file in a given directory
+def find_file(directory, filename):
+    for root, _, files in os.walk(directory):
+        if filename in files:
+            return os.path.join(root, filename)
+    return None
+
+# Initialize an empty dictionary
+data_dict = {}
+
+# Read the CSV file
+with open (csv_file, mode = 'r', encoding = 'utf-8') as file:
+    reader = csv.DictReader(file)
+    for row in reader:
+        stimuli = row["name_s1"]
+        
+        # Extract just the file name 
+        visual_filename = os.path.basename(row["visual_s1"])
+        audio_filename = os.path.basename(row["auditory_s1"])
+        
+        # Find the actual file paths in the specified directory
+        visual_path = find_file(image_dir, visual_filename)
+        audio_path = find_file(audio_dir, audio_filename)
+        
+        # Store in dictionary
+        data_dict[stimuli] = {
+            "name": row["name_s1"],
+            "object": row["item_s1"],
+            "visual": visual_path if visual_path else "Not found",
+            "audio": audio_path if audio_path else "Not found",
+            }
+
+# Convert the dictionary into a DataFrame
+stimuli_df = pd.DataFrame.from_dict(data_dict, orient = 'index')
+
 # Function to save response data to CSV
 all_responses = []
 current_phase = None
 
 def save_to_csv():
-    
     if not all_responses:
         return
         
     df = pd.DataFrame(all_responses)
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    response_file = os.path.join(save_dir, f"testing_V_s1_{timestamp}.csv")
-
-    # Save to CSV
-    df.to_csv(response_file, index = False, lineterminator = "\n")
-    print(f"Saved all responses to {response_file}")
+    output_file_path = os.path.join(current_dir, "response")
+    response_file = os.path.join(output_file_path, f"testing_A_s1_{timestamp}.csv")
     
-# Laod stimuli CSV file
-stimuli_df = pd.read_csv(csv_file)
+    # Save to CSV
+    if platform == "darwin":
+        df.to_csv(response_file, index = False, lineterminator = "\n")
+    else:
+        df.to_csv(response_file, index = False, line_terminator = "\n")
+    print(f"Saved all responses to {response_file})")
+    
+
+# Function to map selected responses correctly
+def map_selected(selected):
+    if pd.isna(selected) or not isinstance(selected, str):
+        return selected
+    
+    selected_basename = os.path.basename(selected)
+    
+    # Check if selected is an audio file -> map to "name"
+    for entry in data_dict.values():
+        if entry["audio"] and os.path.basename(entry["audio"]) == selected_basename:
+            return entry["name"]
+            
+    # Check if selected is an image file -> map to "object"
+    for entry in data_dict.values():
+        if entry["visual"] and os.path.basename(entry["visual"]) == selected_basename:
+            return entry["object"]
+            
+    # If no match found, return as is
+    return selected
 
 # Set up the window
 win = visual.Window(fullscr = True, screen = 0, color = "black", units = "pix", checkTiming = False)
@@ -66,7 +125,7 @@ n = 4
 
 # Generate a balanced block of trials with randomized match/mismatch
 def create_block():
-    unique_names = list(stimuli_df['auditory_s1'].unique())
+    unique_names = list(stimuli_df['audio'].unique())
     random.shuffle(unique_names)
     
     # Split the names into 6 for match and 6 for mismatch
@@ -77,22 +136,22 @@ def create_block():
     mismatch_trials = []
     
     # Load all image path
-    all_images = list(stimuli_df['visual_s1'])
+    all_images = list(stimuli_df['visual'])
     
     # Create match trials: use the correct image
     for name in match_names:
-        row = stimuli_df[stimuli_df['auditory_s1'] == name].iloc[0]
+        row = stimuli_df[stimuli_df['audio'] == name].iloc[0]
         match_trials.append({
         'name': name,
-        'image': row['visual_s1'],
+        'image': row['visual'],
         'match': True
         })
         
     # Create mismatch trials: use an incorrect image
     for name in mismatch_names:
-        row = stimuli_df[stimuli_df['auditory_s1'] == name].iloc[0]
+        row = stimuli_df[stimuli_df['audio'] == name].iloc[0]
         # Select an image that is not the correct one
-        incorrect_images = [img for img in all_images if img != row['visual_s1']]
+        incorrect_images = [img for img in all_images if img != row['visual']]
         mismatched_image = random.choice(incorrect_images)
         mismatch_trials.append({
         'name': name,
@@ -120,6 +179,7 @@ response_wait = visual.TextStim(win, text = "?", font = 'Arial', color = 'white'
 # Experiment loop
 terminate_exp = False
 event.clearEvents()
+
 block_pair_correct_responses = 0
 block_pair_trial_count = 0
 
@@ -129,10 +189,6 @@ for block_num, block in enumerate(all_blocks):
     
     for trial_num, trial in enumerate(block):
         event.clearEvents()
-        
-        selected_name = trial['name']
-        selected_image = trial['image']
-        is_match = trial['match']
     
         # Check for an exit key
         keys = event.getKeys(keyList = ["escape"])
@@ -140,13 +196,17 @@ for block_num, block in enumerate(all_blocks):
             terminate_exp = True
             break
             
+        selected_name = trial['name']
+        selected_image = trial['image']
+        is_match = trial['match']
+            
         # 1. Each trial begins with a fixation cross (500ms)
         fixation_display.draw()
         win.flip()
         core.wait(0.5)
         
         # 2. Audio play with a fixation cross (200ms)
-        name_audio = sound.Sound(selected_name, stopTime = 0.9)
+        name_audio = sound.Sound(selected_name, secs = 0.9)
         name_audio.play()
         fixation_display.draw()
         win.flip()
@@ -174,12 +234,13 @@ for block_num, block in enumerate(all_blocks):
         response = None
         rt = None
         
-        while responseTimer.getTime() < 3:
+        start_time = core.getTime()
+        
+        while core.getTime() - start_time < 3:
             # Check for early exit during the experiment
             keys = event.getKeys(keyList = ["escape", "left", "right"])
             
             if "escape" in keys:
-                print("Escape key pressed during the experiment. Exiting the experiment early.")
                 terminate_exp = True
                 break 
                 
@@ -187,6 +248,7 @@ for block_num, block in enumerate(all_blocks):
                 response = "match"
                 rt = responseTimer.getTime()
                 break
+                
             elif "right" in keys:
                 response = "mismatch"
                 rt = responseTimer.getTime()
@@ -199,11 +261,14 @@ for block_num, block in enumerate(all_blocks):
         # If no response within 3 seconds, mark it as "no response"
         if response is None:
             response = "no response"
-            rt = 0
+            rt = np.nan
             
         # Check accuracy
-        if (response == "match" and is_match) or (response == "mismatch" and not is_match):
-            correct_responses += 1
+        is_correct = 1 if (response == "match" and is_match) or (response == "mismatch" and not is_match) else 0
+        correct_responses += is_correct
+        
+        # Increment total trial count
+        block_pair_trial_count += 1
             
         # 6. 1-second blank screen
         fixation_display.draw()
@@ -217,39 +282,43 @@ for block_num, block in enumerate(all_blocks):
             'trial': trial_num + 1,
             'object_name': selected_name,
             'selected_image': selected_image,
-            'match': is_match,
             'response': response,
-            'response_time': rt * 1000 if rt else 0
+            'response_time': rt * 1000 if rt else np.nan,
+            'correct': is_correct,
+            'match': is_match,
         })
 
-        # Update cumulativ accuracy tracking
-        block_pair_correct_responses += correct_responses
-        block_pair_trial_count += block_trial_count
-    
+    # Update cumulativ accuracy tracking
+    block_pair_correct_responses += correct_responses
     
     # Insert a break every 2 blocks with a feedback message, except after the last one
     if (block_num + 1) % 2 == 0 and block_num < len(all_blocks) -1:
-        accuracy = (block_pair_correct_responses / block_pair_trial_count) * 100
+        accuracy = (block_pair_correct_responses / block_pair_trial_count) * 100 if block_pair_trial_count > 0 else 0
         feedback_message = f"Accuracy: {accuracy: .1f}%\n\nTake a short break.\nPress the space bar to continue."
 
         feedback_display = visual.TextStim(win, text = feedback_message, font = 'Arial', color = 'white', height = 35, pos = (0, 0))
         feedback_display.draw()
         win.flip()
+        
+        core.wait(0.1)
 
         # Wait for a keypress to continue
         keys = event.waitKeys(keyList = ["space", "escape"])
-        if "escape" in keys:
-            print ("Terminate key pressed. Exiting experiment loop early.")
-            terminate_exp = True
-            
-        elif "space" in keys:
-            print(f"Key pressed: {keys}")
-            pass
-                    
+        
+        if keys:
+            if "escape" in keys:
+                print ("Terminate key pressed. Exiting experiment loop early.")
+                terminate_exp = True
+            elif "space" in keys:
+                print(f"Key pressed: {keys}")
+                pass
+                
         core.wait(0.1)
         
         # Reset block_pair accuracy tracking
         block_pair_correct_responses = 0
+        block_pair_trial_count = 0
+        
         event.clearEvents()
         
 # End message
@@ -272,14 +341,15 @@ fixation_display = visual.TextStim(win, text = "+", font = 'Arial', color = 'whi
 image_display = visual.ImageStim(win, image = None, size = [250, 250], pos = (0, 0))
 response_wait = visual.TextStim(win, text = "?", font = 'Arial', color = 'white', height = 35, pos = (0,0))
 
-# Extract the filename without the extension
+# Extract the filename without the extension to create a subfolder
 csv_filename = os.path.splitext(os.path.basename(csv_file))[0]
 
-# Define the folder path inside the save directory
-folder_path = os.path.join(save_dir, csv_filename)
+# Define the folder path inside "respose"
+folder_path = os.path.join(output_file_path, csv_filename)
 
-# Create the directory if it doesn't exist
-os.makedirs(folder_path, exist_ok=True)
+# Record settings
+fs = 44100
+duration = 3
 
 # Set the number of repetitions
 n2 = 4
@@ -299,8 +369,8 @@ for block in range(n2):
             core.quit()
             
         # 1. Select a random image and its corresponding name
-        object_name = row['auditory_s1']
-        correct_image = row['visual_s1']
+        object_name = row['audio']
+        correct_image = row['name']
         
         random.shuffle([correct_image])
         
@@ -315,9 +385,7 @@ for block in range(n2):
         win.flip()
         core.wait(2)
         
-        # Recording settings
-        fs = 44100
-        duration = 3
+        # Setting the recording filename
         audio_filename = os.path.join(folder_path, f"response_sp_{block+1}_{index+1}.wav")
         
         # 4. Wait for the response (3000ms) + record the voice
@@ -360,8 +428,8 @@ for block in range(n2):
         all_responses.append({
             'block': block + 1,
             'trial': index + 1,
-            'object_name': object_name,
-            'selected_image': correct_image,
+            'object_name': correct_name,
+            'selected_image': selected_image,
             'response': audio_filename,
             'response_time': rt * 1000 if rt else 0
         })
