@@ -1,0 +1,97 @@
+phase,block,trial,object_name,object_image,selected,correct,response_time
+Initial_Presentation_1,1,1,nailk,sharp8,,,
+Initial_Presentation_1,1,2,akmil,round6,,,
+Initial_Presentation_1,1,3,pimpu,sharp9,,,
+Initial_Presentation_1,1,4,manuilk,sharp10,,,
+Initial_Presentation_1,1,5,manilk,sharp12,,,
+Initial_Presentation_1,1,6,nipat,sharp11,,,
+Initial_Presentation_1,1,7,nuilk,round5,,,
+Initial_Presentation_1,1,8,ilka,sharp7,,,
+Initial_Presentation_1,1,9,munilk,round3,,,
+Initial_Presentation_1,1,10,lumk,round2,,,
+Initial_Presentation_1,1,11,nak,round1,,,
+Initial_Presentation_1,1,12,inlup,round4,,,
+Initial_Presentation_1,2,1,ilka,sharp7,,,
+Initial_Presentation_1,2,2,nipat,sharp11,,,
+Initial_Presentation_1,2,3,manuilk,sharp10,,,
+Initial_Presentation_1,2,4,nuilk,round5,,,
+Initial_Presentation_1,2,5,pimpu,sharp9,,,
+Initial_Presentation_1,2,6,manilk,sharp12,,,
+Initial_Presentation_1,2,7,akmil,round6,,,
+Initial_Presentation_1,2,8,nak,round1,,,
+Initial_Presentation_1,2,9,lumk,round2,,,
+Initial_Presentation_1,2,10,munilk,round3,,,
+Initial_Presentation_1,2,11,inlup,round4,,,
+Initial_Presentation_1,2,12,nailk,sharp8,,,
+Recognition_training,1,1,akmil,round6,,False,
+Recognition_training,1,2,nipat,sharp11,,False,
+Recognition_training,1,3,manilk,sharp12,,False,
+Recognition_training,1,4,lumk,round2,,False,
+Recognition_training,1,5,ilka,sharp7,,False,
+Recognition_training,1,6,nuilk,round5,,False,
+Recognition_training,1,7,munilk,round3,,False,
+Recognition_training,1,8,inlup,round4,,False,
+Recognition_training,1,9,nak,round1,,False,
+Recognition_training,1,10,manuilk,sharp10,,False,
+Recognition_training,1,11,nailk,sharp8,,False,
+Recognition_training,1,12,pimpu,sharp9,,False,
+Recognition_training,2,1,manuilk,sharp10,,False,
+Recognition_training,2,2,nak,round1,,False,
+Recognition_training,2,3,manilk,sharp12,,False,
+Recognition_training,2,4,nailk,sharp8,,False,
+Recognition_training,2,5,akmil,round6,,False,
+Recognition_training,2,6,ilka,sharp7,,False,
+Recognition_training,2,7,nipat,sharp11,,False,
+Recognition_training,2,8,munilk,round3,,False,
+Recognition_training,2,9,nuilk,round5,,False,
+Recognition_training,2,10,inlup,round4,,False,
+Recognition_training,2,11,pimpu,sharp9,,False,
+Recognition_training,2,12,lumk,round2,,False,
+Initial_Presentation_2,1,1,nak,round1,,,
+Initial_Presentation_2,1,2,ilka,sharp7,,,
+Initial_Presentation_2,1,3,manilk,sharp12,,,
+Initial_Presentation_2,1,4,akmil,round6,,,
+Initial_Presentation_2,1,5,nipat,sharp11,,,
+Initial_Presentation_2,1,6,nailk,sharp8,,,
+Initial_Presentation_2,1,7,munilk,round3,,,
+Initial_Presentation_2,1,8,nuilk,round5,,,
+Initial_Presentation_2,1,9,manuilk,sharp10,,,
+Initial_Presentation_2,1,10,pimpu,sharp9,,,
+Initial_Presentation_2,1,11,lumk,round2,,,
+Initial_Presentation_2,1,12,inlup,round4,,,
+Initial_Presentation_2,2,1,nuilk,round5,,,
+Initial_Presentation_2,2,2,lumk,round2,,,
+Initial_Presentation_2,2,3,akmil,round6,,,
+Initial_Presentation_2,2,4,manilk,sharp12,,,
+Initial_Presentation_2,2,5,nipat,sharp11,,,
+Initial_Presentation_2,2,6,nailk,sharp8,,,
+Initial_Presentation_2,2,7,pimpu,sharp9,,,
+Initial_Presentation_2,2,8,ilka,sharp7,,,
+Initial_Presentation_2,2,9,nak,round1,,,
+Initial_Presentation_2,2,10,manuilk,sharp10,,,
+Initial_Presentation_2,2,11,munilk,round3,,,
+Initial_Presentation_2,2,12,inlup,round4,,,
+Name_Learning,1,1,akmil,round6,no response,False,0.0
+Name_Learning,1,2,nak,round1,no response,False,0.0
+Name_Learning,1,3,nipat,sharp11,no response,False,0.0
+Name_Learning,1,4,manuilk,sharp10,no response,False,0.0
+Name_Learning,1,5,munilk,round3,no response,False,0.0
+Name_Learning,1,6,ilka,sharp7,no response,False,0.0
+Name_Learning,1,7,nailk,sharp8,no response,False,0.0
+Name_Learning,1,8,manilk,sharp12,no response,False,0.0
+Name_Learning,1,9,inlup,round4,no response,False,0.0
+Name_Learning,1,10,pimpu,sharp9,no response,False,0.0
+Name_Learning,1,11,nuilk,round5,no response,False,0.0
+Name_Learning,1,12,lumk,round2,no response,False,0.0
+Name_Learning,2,1,munilk,round3,no response,False,0.0
+Name_Learning,2,2,nak,round1,no response,False,0.0
+Name_Learning,2,3,nuilk,round5,no response,False,0.0
+Name_Learning,2,4,pimpu,sharp9,no response,False,0.0
+Name_Learning,2,5,lumk,round2,no response,False,0.0
+Name_Learning,2,6,nipat,sharp11,no response,False,0.0
+Name_Learning,2,7,akmil,round6,no response,False,0.0
+Name_Learning,2,8,manuilk,sharp10,no response,False,0.0
+Name_Learning,2,9,manilk,sharp12,no response,False,0.0
+Name_Learning,2,10,nailk,sharp8,no response,False,0.0
+Name_Learning,2,11,ilka,sharp7,no response,False,0.0
+Name_Learning,2,12,inlup,round4,no response,False,0.0

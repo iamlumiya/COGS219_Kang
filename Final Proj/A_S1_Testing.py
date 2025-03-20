@@ -434,7 +434,7 @@ for block in range(n2):
             'block': block + 1,
             'trial': index + 1,
             'object_name': object_name,
-            'selected_image': data_dict[correct_image]["object"],
+            'selected_image': data_dict[row["name"]]["object"],
             'response': audio_filename,
             'response_time': rt * 1000 if rt else 0
         })
