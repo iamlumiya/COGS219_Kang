@@ -150,8 +150,8 @@ for block in range(n):
             'phase': current_phase,
             'block': block + 1,
             'trial': index + 1,
-            'object_name': data_dict[correct_name]["name"],
-            'object_image': data_dict[object_image]["object"]
+            'object_name': data_dict[row["name"]]["name"],
+            'object_image': data_dict[row["name"]]["object"]
         })
         
         # Blank space
@@ -287,8 +287,8 @@ for block in range(n2):
             'phase': current_phase,
             'block': block + 1,
             'trial': index + 1,
-            'object_name': data_dict[object_name]["name"],
-            'object_image': data_dict[correct_image]["object"],
+            'object_name': data_dict[row["name"]]["name"],
+            'object_image': data_dict[row["name"]]["object"],
             'selected': map_selected(selected_image),
             'correct': is_correct,
             'response_time': rt * 1000 if rt else np.nan
@@ -357,8 +357,8 @@ for block in range(n):
             'phase': current_phase,
             'block': block + 1,
             'trial': index + 1,
-            'object_name': data_dict[correct_name]["name"],
-            'object_image': data_dict[object_image]["object"]
+            'object_name': data_dict[row["name"]]["name"],
+            'object_image': data_dict[row["name"]]["object"]
         })
 
         # Blank space
@@ -506,8 +506,8 @@ for block in range(n3):
             'phase': current_phase,
             'block': block + 1,
             'trial': index + 1,
-            'object_name': data_dict[correct_name]["name"],
-            'object_image': data_dict[object_image]["object"],
+            'object_name': data_dict[row["name"]]["name"],
+            'object_image': data_dict[row["name"]]["object"],
             'selected': map_selected(selected_name),
             'correct': is_correct,
             'response_time': rt * 1000 if rt else np.nan
