@@ -1,19 +1,20 @@
 # Combined Learning phase - Visual - Set 2 (Initial[24] - Recog[24] - Initial[24] - Name[24])
 
 from psychopy import visual, core, event
+from sys import platform
 import pandas as pd
 import random
 import datetime
 import os
 import csv
 import numpy as np
-from sys import platform
+import serial
 
 # Get the current working directory
 current_dir = os.getcwd()
 
 # Define the CSV file path
-csv_file = os.path.join(current_dir, "stimuli.csv")
+csv_file = os.path.join(current_dir, "stimuli_s2.csv")
 
 # Define directions to search for image and audio files
 image_dir = os.path.join(current_dir, "image")
@@ -49,6 +50,8 @@ with open (csv_file, mode = 'r', encoding = 'utf-8') as file:
             "object": row["item_s2"],
             "visual": visual_path if visual_path else "Not found",
             "audio": audio_path if audio_path else "Not found",
+            "written_code": row["written_code"],
+            "picture_code": row["picture_code"]
             }
             
 # Convert the dictionary into a DataFrame
@@ -94,9 +97,19 @@ def map_selected(selected):
     # If no match found, return as it
     return selected
             
+# Serial port for Biosemi to send trigger codes
+ser = serial.Serial('COM3', baudrate = 115200)
+
 # Set up the window
 win = visual.Window(fullscr = True, screen = 0, color = "black", units = "pix", checkTiming = False)
 mouse = event.Mouse(visible = True, win = win)
+
+# Fuction to send the trigger to the EEG collecting computer
+def send_trigger(code):
+    if ser:
+        ser.write(chr(code).encode())
+        ser.write(chr(0).encode())
+        print(code)
 
 # Function to show a message and wait for a mouse click
 def show_message(text):
@@ -142,6 +155,9 @@ for block in range(n):
         name_display.text = correct_name
         image_display.draw()
         name_display.draw()
+        
+        # Trigger: written_code
+        win.callOnFlip(send_trigger, int(row['written_code']))
         win.flip()
         core.wait(2)
         
@@ -152,6 +168,8 @@ for block in range(n):
             'trial': index + 1,
             'object_name': data_dict[row["name"]]["name"],
             'object_image': data_dict[row["name"]]["object"]
+            'picture_code': row['picture_code'],
+            'written_code': row['written_code']
         })
         
         # Blank space
@@ -219,6 +237,8 @@ for block in range(n2):
             stim.setImage(img_path)
             stim.draw()
         
+        # Trigger: picture_code
+        win.callOnFlip(send_trigger, int(row['picture_code']))
         win.flip()
         core.wait(1)
         
@@ -228,6 +248,8 @@ for block in range(n2):
         for stim in image_stims:
             stim.draw()
         
+        # Trigger: written_code
+        win.callOnFlip(send_trigger, int(row['written_code']))
         win.flip()
 
         #6. Wait for participants to respond by clicking
@@ -291,7 +313,9 @@ for block in range(n2):
             'object_image': data_dict[row["name"]]["object"],
             'selected': map_selected(selected_image),
             'correct': is_correct,
-            'response_time': rt * 1000 if rt else np.nan
+            'response_time': rt * 1000 if rt else np.nan,
+            'picture_code': row['picture_code'],
+            'written_code': row['written_code']
         })
         
         event.clearEvents()
@@ -349,6 +373,9 @@ for block in range(n):
         name_display.text = correct_name
         image_display.draw()
         name_display.draw()
+        
+        # Trigger: written_code
+        win.callOnFlip(send_trigger, int(row['written_code']))
         win.flip()
         core.wait(2)
         
@@ -358,7 +385,9 @@ for block in range(n):
             'block': block + 1,
             'trial': index + 1,
             'object_name': data_dict[row["name"]]["name"],
-            'object_image': data_dict[row["name"]]["object"]
+            'object_image': data_dict[row["name"]]["object"],
+            'picture_code': row['picture_code'],
+            'written_code': row['written_code']
         })
 
         # Blank space
@@ -423,6 +452,9 @@ for block in range(n3):
         # 4. Display an image
         image_display.image = object_image
         image_display.draw()
+        
+        # Trigger: picture_code
+        win.callOnFlip(send_trigger, int(row['picture_code']))
         win.flip()
         core.wait(2)
         
@@ -432,6 +464,9 @@ for block in range(n3):
             stim.draw()
         
         image_display.draw()
+        
+        # Trigger: written_code
+        win.callOnFlip(send_trigger, int(row['written_code']))
         win.flip()
         
         # 6. Wait for participants to respond by clicking
@@ -510,7 +545,9 @@ for block in range(n3):
             'object_image': data_dict[row["name"]]["object"],
             'selected': map_selected(selected_name),
             'correct': is_correct,
-            'response_time': rt * 1000 if rt else np.nan
+            'response_time': rt * 1000 if rt else np.nan,
+            'picture_code': row['picture_code'],
+            'written_code': row['written_code']
         })
 
     event.clearEvents()
@@ -539,3 +576,7 @@ show_message("You've completed all the training phases.\n\nClick the mouse to ex
     
 win.close()
 core.quit()
+
+# Close the serial port after all the words are presented
+if ser:
+    ser.close()

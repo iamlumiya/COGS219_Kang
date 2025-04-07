@@ -1,19 +1,21 @@
 # Testing phase - Visual - Set 1
 
 from psychopy import visual, event, core, data
+from sys import platform
 import datetime
 import pandas as pd
 import random
 import os
 import csv
 import numpy as np
-from sys import platform
+import serial
+
 
 # Get the current working directory
 current_dir = os.getcwd()
 
 # Define the CSV file path
-csv_file = os.path.join(current_dir, "stimuli.csv")
+csv_file = os.path.join(current_dir, "stimuli_s1.csv")
 
 # Define directions to search for image and audio files
 image_dir = os.path.join(current_dir, "image")
@@ -49,6 +51,8 @@ with open (csv_file, mode = 'r', encoding = 'utf-8') as file:
             "object": row["item_s1"],
             "visual": visual_path if visual_path else "Not found",
             "audio": audio_path if audio_path else "Not found",
+            "written_code": row["written_code"],
+            "picture_code": row["picture_code"]
             }
             
 # Convert the dictionary into a DataFrame
@@ -74,10 +78,25 @@ def save_to_csv():
         df.to_csv(response_file, index = False, line_terminator = "\n")
     print(f"Saved all responses to {response_file}")
     
+# Serial port for Biosemi to send trigger codes
+try:
+    ser = serial.Serial('COM3', baudrate = 115200)
+except Exception as e:
+    print("Serial port not available. Running in mock mode.")
+    ser = None
 
 # Set up the window
 win = visual.Window(fullscr = True, screen = 0, color = "black", units = "pix", checkTiming = False)
 mouse = event.Mouse(visible = True, win = win)
+
+# Function to send the trigger to the EEG collecting computer
+def send_trigger(code):
+    if ser:
+        ser.write(chr(code).encode())
+        ser.write(chr(0).encode())
+        print(code)
+    else:
+        print(f"[Mock] EEG Trigger: {code}")
 
 # Function to show a message and wait for the space bar pressed
 def show_message(text):
@@ -180,18 +199,43 @@ for block_num, block in enumerate(all_blocks):
       
         #1 Each trial begins with a fixation cross (500ms)
         fixation_display.draw()
+        
+        # Define match/mismatch code 
+        if is_match:
+            match_code = 62 # match_written
+        else:
+            match_code = 64 # mismatch_written
+        
+        # Trigger: match_code
+        win.callOnFlip(send_trigger, match_code)
         win.flip()
         core.wait(0.5)
+        
+        # Get the correct info from data_dict
+        target_entry = data_dict[selected_name]
 
         #2 Display the name (200ms)
         name_display.setText(selected_name)
         name_display.draw()
+        
+        # Trigger: written_code
+        win.callOnFlip(send_trigger, int(target_entry['written_code']))
         win.flip()
         core.wait(0.2)
 
         #3 Visual display of the object either matching or not matching that name (200ms)
         image_display.setImage(selected_image)
         image_display.draw()
+        
+        # Trigger: picture_code
+        for val in data_dict.values():
+            if val['visual'] == selected_image:
+                picture_code = int(val['picture_code'])
+                break
+        else:
+            picture_code = 0
+        
+        win.callOnFlip(send_trigger, picture_code)
         win.flip()
         core.wait(0.2)
 
@@ -261,7 +305,9 @@ for block_num, block in enumerate(all_blocks):
             'response': response,
             'response_time': rt * 1000 if rt else np.nan,
             'correct': is_correct,
-            'match': is_match,
+            'match': match_code,
+            'picture_code': picture_code,
+            'writte_code': int(target_entry['written_code'])
         })
         
     # Update two-block tracking
@@ -348,12 +394,25 @@ for block in range(n2):
         
         # 2. Display Fixation cross
         fixation_display.draw()
+        
+        # Trigger: written_production
+        win.callOnFlip(send_trigger, 66)
         win.flip()
         core.wait(0.5)
         
         # 3. Display an image
         image_display.image = object_image
         image_display.draw()
+        
+        # Trigger: picture_code
+        for val in data_dict.values():
+            if val["visual"] == object_image:
+                picture_code = int(val["picture_code"])
+                break
+        else:
+            picture_code = 0
+            
+        win.callOnFlip(send_trigger, picture_code)
         win.flip()
         core.wait(2)
         
@@ -390,6 +449,18 @@ for block in range(n2):
         rt = responseTimer.getTime()
         is_correct = typed_name.strip().lower() == correct_name.strip().lower()
         
+        # Send trigger for typed word if valid
+        typed_name_clean = typed_name.strip().lower()
+        code_to_send = None
+        
+        for entry in data_dict.values():
+            if entry["name"].strip().lower() == typed_name_clean:
+                code_to_send = int(entry["written_code"])
+                break
+                
+        if code_to_send:
+            send_trigger(code_to_send)
+        
         # 5. Display fixation cross; inter-trial interval
         fixation_display.draw()
         win.flip()
@@ -404,7 +475,9 @@ for block in range(n2):
             'object_image': data_dict[correct_name]["object"],
             'response': typed_name,
             'correct': 1 if is_correct else 0,
-            'response_time': rt * 1000 if rt else 0
+            'response_time': rt * 1000 if rt else 0,
+            'picture_code': picture_code,
+            'response_written_code': code_to_send if code_to_send else "N/A"
         })
         
         event.clearEvents()
@@ -442,3 +515,7 @@ show_message("You've completed all the training phases.\n\nPress the space bar t
 
 win.close()
 core.quit()
+
+# Close the serial port after all the words are presented
+if ser:
+    ser.close()

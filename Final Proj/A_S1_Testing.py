@@ -1,21 +1,22 @@
 # Testing phase - Auditory - Set 1
 
 from psychopy import visual, event, core, data, sound
+from sys import platform
 import datetime
 import pandas as pd
 import random
 import os
 import csv
-from sys import platform
 import sounddevice as sd
 import soundfile as sf
 import numpy as np
+import serial
 
 # Get the current working directory
 current_dir = os.getcwd()
 
 # Define the CSV file path
-csv_file = os.path.join(current_dir, "stimuli.csv")
+csv_file = os.path.join(current_dir, "stimuli_s1.csv")
 
 # Define directions to search for image and audio files
 image_dir = os.path.join(current_dir, "image")
@@ -51,6 +52,8 @@ with open (csv_file, mode = 'r', encoding = 'utf-8') as file:
             "object": row["item_s1"],
             "visual": visual_path if visual_path else "Not found",
             "audio": audio_path if audio_path else "Not found",
+            "spoken_code": row["spoken_code"],
+            "picture_code": row["picture_code"]
             }
 
 # Convert the dictionary into a DataFrame
@@ -74,8 +77,7 @@ def save_to_csv():
         df.to_csv(response_file, index = False, lineterminator = "\n")
     else:
         df.to_csv(response_file, index = False, line_terminator = "\n")
-    print(f"Saved all responses to {response_file})")
-    
+    print(f"Saved all responses to {response_file})")    
 
 # Function to map selected responses correctly
 def map_selected(selected):
@@ -97,9 +99,25 @@ def map_selected(selected):
     # If no match found, return as is
     return selected
 
+# Serial port for Biosemi to send trigger codes
+try:
+    ser = serial.Serial('COM3', baudrate = 115200)
+except Exception as e:
+    print("Serial port not available. Running in mock mode")
+    ser = None
+
 # Set up the window
-win = visual.Window(fullscr = True, screen = 0, color = "black", units = "pix", checkTiming = False)
+win = visual.Window(size = (800, 600), screen = 0, color = "black", units = "pix", checkTiming = False)
 mouse = event.Mouse(visible = True, win = win)
+
+# Function to send the trigger to the EEG collecting computer
+def send_trigger(code):
+    if ser:
+        ser.write(chr(code).encode())
+        ser.write(chr(0).encode())
+        print(code)
+    else:
+        print(f"[Mock] EEG trigger: {code}")
 
 # Function to show a message and wait for the space bar pressed
 def show_message(text):
@@ -203,12 +221,27 @@ for block_num, block in enumerate(all_blocks):
             
         # 1. Each trial begins with a fixation cross (500ms)
         fixation_display.draw()
+        
+        # Define match/mismatch code
+        if is_match:
+            match_code = 61 # match_spoken
+        else:
+            match_code = 63 # mismatch_spoken
+            
+        # Trigger: match_code
+        win.callOnFlip(send_trigger, match_code)
         win.flip()
         core.wait(0.5)
+        
+        # Get the correct info from data_dict
+        target_entry = data_dict[selected_name]
         
         # 2. Audio play with a fixation cross (200ms)
         audio_path = data_dict[selected_name]["audio"]
         name_audio = sound.Sound(audio_path, secs = 0.9)
+        
+        # Trigger: spoken_code
+        win.callOnFlip(send_trigger, int(target_entry['spoken_code']))
         name_audio.play()
         fixation_display.draw()
         win.flip()
@@ -217,6 +250,16 @@ for block_num, block in enumerate(all_blocks):
         # 3. Visual display of the object either matching or not matching that name (200ms)
         image_display.setImage(selected_image)
         image_display.draw()
+        
+        # Trigger: picture_code
+        for val in data_dict.values():
+            if val['visual'] == selected_image:
+                picture_code = int(val['picture_code'])
+                break
+        else:
+            picture_code = 0
+            
+        win.callOnFlip(send_trigger, picture_code)
         win.flip()
         core.wait(0.2)
         
@@ -286,7 +329,9 @@ for block_num, block in enumerate(all_blocks):
             'response': response,
             'response_time': rt * 1000 if rt else np.nan,
             'correct': is_correct,
-            'match': is_match,
+            'match': match_code,
+            'picture_code': picture_code,
+            'spoken_code': int(target_entry['spoken_code'])
         })
 
     # Update cumulativ accuracy tracking
@@ -381,12 +426,25 @@ for block in range(n2):
         
         # 2. Display fixation cross
         fixation_display.draw()
+        
+        # Trigger: spoken_production
+        win.callOnFlip(send_trigger, 65)
         win.flip()
         core.wait(0.5)
         
         # 3. Display the image (2000ms)
         image_display.image = correct_image
         image_display.draw()
+        
+        # Trigger: picture_code
+        for val in data_dict.values():
+            if val['visual'] == correct_image:
+                picture_code = int(val["picture_code"])
+                break
+        else:
+            picture_code = 0
+        
+        win.callOnFlip(send_trigger, picture_code)
         win.flip()
         core.wait(2)
         
@@ -402,7 +460,12 @@ for block in range(n2):
         # Change color to green when recording starts
         response_wait.color = [-0.61, 0.61, -0.61]
         response_wait.draw()
+        
+        # Trigger: spoken_code when recording starts
+        spoken_code = int(row["spoken_code"])
+        send_trigger(spoken_code)
         win.flip()
+        
         
         # Start recording
         response_start = core.getTime()
@@ -436,7 +499,8 @@ for block in range(n2):
             'object_name': object_name,
             'selected_image': data_dict[row["name"]]["object"],
             'response': audio_filename,
-            'response_time': rt * 1000 if rt else 0
+            'response_time': rt * 1000 if rt else 0,
+            'response_spoken_code': spoken_code if spoken_code else "N/A"
         })
         
         event.clearEvents()
@@ -472,3 +536,5 @@ show_message("You've completed all the testing phases.\n\n Press the space bar t
 win.close()
 core.quit()
 
+if ser:
+    ser.close()

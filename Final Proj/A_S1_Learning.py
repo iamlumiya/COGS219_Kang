@@ -2,19 +2,20 @@
 # Initial(24) - Recognition(24) - Initial(24) - Name (24)
 
 from psychopy import visual, core, event, sound
+from sys import platform
 import pandas as pd
 import random
 import datetime
 import os
 import csv
 import numpy as np
-from sys import platform
+import serial
 
 # Get the current working directory
 current_dir = os.getcwd()
 
 # Define the CSV file path
-csv_file = os.path.join(current_dir, "stimuli.csv")
+csv_file = os.path.join(current_dir, "stimuli_s1.csv")
 
 # Define directions to search for image and audio files
 image_dir = os.path.join(current_dir, "image")
@@ -50,6 +51,8 @@ with open (csv_file, mode = 'r', encoding = 'utf-8') as file:
             "object": row["item_s1"],
             "visual": visual_path if visual_path else "Not found",
             "audio": audio_path if audio_path else "Not found",
+            "spoken_code": row["spoken_code"],
+            "picture_code": row["picture_code"]
             }
 
 # Convert the dictionary into a DataFrame
@@ -96,10 +99,25 @@ def map_selected(selected):
     # If no match found, return as is
     return selected
 
+# Serial port for Biosemi to send trigger codes
+try:
+    ser = serial.Serial('COM3', baudrate = 115200)
+except Exception as e:
+    print("Serial port not available. Running in mock mode.")
+    ser = None
 
 # Set up the window
-win = visual.Window(fullscr = True, screen = 0, color = "black", units = "pix", checkTiming = False)
+win = visual.Window(size = (800,600) , screen = 0, color = "black", units = "pix", checkTiming = False)
 mouse = event.Mouse(visible = True, win = win)
+
+# Function to send the trigger to the EEG collecting computer
+def send_trigger(code):
+    if ser:
+        ser.write(chr(code).encode())
+        ser.write(chr(0).encode())
+        print(code)
+    else:
+        print(f"[Mock] EEG Trigger: {code}")
 
 # Function to show a message and wait for a mouse click
 def show_message(text):
@@ -142,6 +160,9 @@ for block in range(n):
         image_display.image = object_image
         name_audio = sound.Sound(correct_name, stopTime = 1.5)
         image_display.draw()
+        
+        # Trigger: spoken_code
+        win.callOnFlip(send_trigger, int(row['spoken_code']))
         win.flip()
         name_audio.play()
         core.wait(2)
@@ -152,7 +173,9 @@ for block in range(n):
             'block': block + 1,
             'trial': index + 1,
             'object_name': data_dict[row["name"]]["name"],
-            'object_image': data_dict[row["name"]]["object"]
+            'object_image': data_dict[row["name"]]["object"],
+            'picture_code': row['picture_code'],
+            'spoken_code': row['spoken_code']
         })
         
         # Blank space
@@ -219,6 +242,8 @@ for block in range(n2):
             stim.setImage(img_path)
             stim.draw()
         
+        # Trigger: picture_code
+        win.callOnFlip(send_trigger, int(row['picture_code']))
         win.flip()
         core.wait(1)
         
@@ -228,6 +253,8 @@ for block in range(n2):
         for stim in image_stims:
             stim.draw()
         
+        # Trigger: spoken_code
+        win.callOnFlip(send_trigger, int(row['spoken_code']))
         win.flip()
         
         #6. Wait for participants to respond by clicking
@@ -291,7 +318,9 @@ for block in range(n2):
             'object_image': data_dict[row["name"]]["object"],
             'selected': map_selected(selected_image),
             'correct': is_correct,
-            'response_time': rt * 1000 if rt else np.nan
+            'response_time': rt * 1000 if rt else np.nan,
+            'picture_code': row['picture_code'],
+            'spoken_code': row['spoken_code']
         })
         
         event.clearEvents()
@@ -344,6 +373,9 @@ for block in range(n):
         image_display.image = object_image
         name_audio = sound.Sound(correct_name, stopTime = 1.5)
         image_display.draw()
+        
+        # Trigger: spoken_code
+        win.callOnFlip(send_trigger, int(row['spoken_code']))
         win.flip()
         name_audio.play()
         core.wait(2)
@@ -421,6 +453,9 @@ for block in range(n3):
         # 4. Display an image
         image_display.image = object_image
         image_display.draw()
+        
+        # Trigger: picture_code
+        win.callOnFlip(send_trigger, int(row['picture_code']))
         win.flip()
         core.wait(2)
 
@@ -464,6 +499,18 @@ for block in range(n3):
                 responseTimer.reset()
                 rt_tracking_active = True
                     
+            # Trigger: spoken_word for each name being played
+            name_clean = os.path.basename(name_choices[i])
+            spoken_code_to_send = None
+            
+            for entry in data_dict.values():
+                if entry['audio'] and os.path.basename(entry['audio']) == name_clean:
+                    spoken_code_to_send = int(entry['spoken_code'])
+                    break
+                    
+            if spoken_code_to_send:
+                send_trigger(spoken_code_to_send )
+            
             # Play audio and check for responses simultaneously
             audio.play()
                 
@@ -575,7 +622,9 @@ for block in range(n3):
             'object_image': data_dict[row["name"]]["object"],
             'selected': map_selected(selected_name),
             'correct': is_correct,
-            'response_time': rt * 1000 if rt else 0
+            'response_time': rt * 1000 if rt else 0,
+            'picture_code': row['picture_code'],
+            'selected_spoken_code': spoken_code_to_send if response_given else "N/A"
         })
             
     event.clearEvents()
@@ -603,3 +652,7 @@ show_message("You've completed all the training phases.\n\nClick the mouse to ex
     
 win.close()
 core.quit()
+
+# Close the serial port after all the words are presented
+if ser:
+    ser.close()
