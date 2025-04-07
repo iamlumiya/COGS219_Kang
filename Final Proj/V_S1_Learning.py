@@ -114,6 +114,7 @@ mouse = event.Mouse(visible = True, win = win)
 def send_trigger(code):
     if ser:
         ser.write(chr(code).encode())
+        core.wait(0.005)
         ser.write(chr(0).encode())
         print(code)
     else:
@@ -166,7 +167,8 @@ for block in range(n):
         name_display.draw()
         
         # Trigger: written_code
-        win.callOnFlip(send_trigger, int(row['written_code']))
+        written_code = int(data_dict[correct_name]['written_code'])
+        win.callOnFlip(send_trigger, written_code)
         win.flip()
         
         core.wait(2)
@@ -178,8 +180,6 @@ for block in range(n):
             'trial': index + 1,
             'object_name': data_dict[row["name"]]["name"],
             'object_image': data_dict[row["name"]]["object"],
-            'picture_code': row['picture_code'],
-            'written_code': row['written_code']
         })
         
         # Blank space
@@ -248,7 +248,9 @@ for block in range(n2):
             stim.draw()
         
         # Trigger: picture_code
-        win.callOnFlip(send_trigger, int(row['picture_code']))
+        target_entry = data_dict[object_name]
+        picture_code = int(target_entry['picture_code'])
+        win.callOnFlip(send_trigger, picture_code)
         win.flip()
         core.wait(1)
         
@@ -259,7 +261,8 @@ for block in range(n2):
             stim.draw()
         
         # Trigger: written_code
-        win.callOnFlip(send_trigger, int(row['written_code']))
+        written_code = int(target_entry['written_code'])
+        win.callOnFlip(send_trigger, written_code)
         win.flip()
 
         #6. Wait for participants to respond by clicking
@@ -323,9 +326,7 @@ for block in range(n2):
             'object_image': data_dict[row["name"]]["object"],
             'selected': map_selected(selected_image),
             'correct': is_correct,
-            'response_time': rt * 1000 if rt else np.nan,
-            'picture_code': row['picture_code'],
-            'written_code': row['written_code']
+            'response_time': rt * 1000 if rt else np.nan
         })
         
         event.clearEvents()
@@ -385,7 +386,8 @@ for block in range(n):
         name_display.draw()
         
         # Trigger: written_code
-        win.callOnFlip(send_trigger, int(row['written_code']))
+        written_code = int(data_dict[correct_name]['written_code'])
+        win.callOnFlip(send_trigger, written_code)
         win.flip()
         core.wait(2)
         
@@ -395,9 +397,7 @@ for block in range(n):
             'block': block + 1,
             'trial': index + 1,
             'object_name': data_dict[row["name"]]["name"],
-            'object_image': data_dict[row["name"]]["object"],
-            'picture_code': row['picture_code'],
-            'written_code': row['written_code']
+            'object_image': data_dict[row["name"]]["object"]
         })
 
         # Blank space
@@ -449,8 +449,8 @@ for block in range(n3):
             break
             
         # 1. Select a random image and its corresponding name
-        object_image = row['visual']
         correct_name = row['name']
+        object_image = row['visual']
         
         # 2. Select three distractor names (excluding the correct name)
         distractor_names = random.sample([name for name in stimuli_df['name'] if name != correct_name], 3)
@@ -464,7 +464,9 @@ for block in range(n3):
         image_display.draw()
         
         # Trigger: picture_code
-        win.callOnFlip(send_trigger, int(row['picture_code']))
+        target_entry = data_dict[correct_name]
+        picture_code = int(target_entry['picture_code'])
+        win.callOnFlip(send_trigger, picture_code)
         win.flip()
         core.wait(2)
         
@@ -476,7 +478,8 @@ for block in range(n3):
         image_display.draw()
         
         # Trigger: written_code
-        win.callOnFlip(send_trigger, int(row['written_code']))
+        written_code = int(target_entry['written_code'])
+        win.callOnFlip(send_trigger, written_code)
         win.flip()
         
         # 6. Wait for participants to respond by clicking
@@ -555,9 +558,7 @@ for block in range(n3):
             'object_image': data_dict[row["name"]]["object"],
             'selected': map_selected(selected_name),
             'correct': is_correct,
-            'response_time': rt * 1000 if rt else np.nan,
-            'picture_code': row['picture_code'],
-            'written_code': row['written_code']
+            'response_time': rt * 1000 if rt else np.nan
         })
 
     event.clearEvents()
