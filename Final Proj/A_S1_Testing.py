@@ -241,11 +241,11 @@ for block_num, block in enumerate(all_blocks):
         core.wait(0.5)
         
         # Get the correct info from data_dict
-        target_entry = data_dict[selected_name]['audio']
+        target_entry = data_dict[selected_name]
+        audio_path = target_entry['audio']
+        spoken_code = int(target_entry['spoken_code'])
         
         # 2. Audio play with a fixation cross (200ms)
-        audio_path = data_dict[selected_name]["audio"]
-        spoken_code = int(audio_path["spoken_code"])
         name_audio = sound.Sound(audio_path, secs = 0.9)
         
         # Trigger: spoken_code
@@ -261,7 +261,7 @@ for block_num, block in enumerate(all_blocks):
         
         # Trigger: picture_code
         picture_code = visual_to_picture_code.get(selected_image, 0)
-        win.callOnFlip(send_trigger, pictuture_code)
+        win.callOnFlip(send_trigger, picture_code)
         win.flip()
         core.wait(0.2)
         
