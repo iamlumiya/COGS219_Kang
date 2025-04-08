@@ -114,6 +114,7 @@ mouse = event.Mouse(visible = True, win = win)
 def send_trigger(code):
     if ser:
         ser.write(chr(code).encode())
+        core.wait(0.005)
         ser.write(chr(0).encode())
         print(code)
     else:
@@ -218,6 +219,12 @@ for block_num, block in enumerate(all_blocks):
         selected_name = selected_name.replace(".wav", "")
         selected_image = trial['image']
         is_match = trial['match']
+
+        # Mapping dictionary for picture_code
+        visual_to_picture_code = {
+            entry["visual"]: int(entry["picture_code"])
+            for entry in data_dict.values()
+        }
             
         # 1. Each trial begins with a fixation cross (500ms)
         fixation_display.draw()
@@ -234,16 +241,17 @@ for block_num, block in enumerate(all_blocks):
         core.wait(0.5)
         
         # Get the correct info from data_dict
-        target_entry = data_dict[selected_name]
+        target_entry = data_dict[selected_name]['audio']
         
         # 2. Audio play with a fixation cross (200ms)
         audio_path = data_dict[selected_name]["audio"]
+        spoken_code = int(audio_path["spoken_code"])
         name_audio = sound.Sound(audio_path, secs = 0.9)
         
         # Trigger: spoken_code
-        win.callOnFlip(send_trigger, int(target_entry['spoken_code']))
         name_audio.play()
         fixation_display.draw()
+        win.callOnFlip(send_trigger, spoken_code)
         win.flip()
         core.wait(0.9)
         
@@ -252,14 +260,8 @@ for block_num, block in enumerate(all_blocks):
         image_display.draw()
         
         # Trigger: picture_code
-        for val in data_dict.values():
-            if val['visual'] == selected_image:
-                picture_code = int(val['picture_code'])
-                break
-        else:
-            picture_code = 0
-            
-        win.callOnFlip(send_trigger, picture_code)
+        picture_code = visual_to_picture_code.get(selected_image, 0)
+        win.callOnFlip(send_trigger, pictuture_code)
         win.flip()
         core.wait(0.2)
         
@@ -329,9 +331,7 @@ for block_num, block in enumerate(all_blocks):
             'response': response,
             'response_time': rt * 1000 if rt else np.nan,
             'correct': is_correct,
-            'match': match_code,
-            'picture_code': picture_code,
-            'spoken_code': int(target_entry['spoken_code'])
+            'match': match_code
         })
 
     # Update cumulativ accuracy tracking
@@ -396,7 +396,6 @@ csv_filename = os.path.splitext(os.path.basename(csv_file))[0]
 output_folder_path = os.path.join(current_dir, "response")
 folder_path = os.path.join(output_folder_path, csv_filename)
 
-
 # Record settings
 fs = 44100
 duration = 3
@@ -437,13 +436,8 @@ for block in range(n2):
         image_display.draw()
         
         # Trigger: picture_code
-        for val in data_dict.values():
-            if val['visual'] == correct_image:
-                picture_code = int(val["picture_code"])
-                break
-        else:
-            picture_code = 0
-        
+        target_entry = data_dict[correct_image]
+        picture_code = int(target_entry["picture_code"])        
         win.callOnFlip(send_trigger, picture_code)
         win.flip()
         core.wait(2)
@@ -460,13 +454,8 @@ for block in range(n2):
         # Change color to green when recording starts
         response_wait.color = [-0.61, 0.61, -0.61]
         response_wait.draw()
-        
-        # Trigger: spoken_code when recording starts
-        spoken_code = int(row["spoken_code"])
-        send_trigger(spoken_code)
         win.flip()
-        
-        
+                
         # Start recording
         response_start = core.getTime()
         recording = sd.rec(int(duration* fs), samplerate = fs, channels = 1, dtype = "int16")
@@ -499,8 +488,7 @@ for block in range(n2):
             'object_name': object_name,
             'selected_image': data_dict[row["name"]]["object"],
             'response': audio_filename,
-            'response_time': rt * 1000 if rt else 0,
-            'response_spoken_code': spoken_code if spoken_code else "N/A"
+            'response_time': rt * 1000 if rt else 0
         })
         
         event.clearEvents()
