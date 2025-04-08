@@ -240,12 +240,10 @@ for block_num, block in enumerate(all_blocks):
         win.flip()
         core.wait(0.5)
         
-        # Get the correct info from data_dict
-        target_entry = data_dict[selected_name]
-        audio_path = target_entry['audio']
-        spoken_code = int(target_entry['spoken_code'])
-        
         # 2. Audio play with a fixation cross (200ms)
+        target_entry = data_dict[selected_name]
+        audio_path = target_entry["audio"]
+        spoken_code = int(target_entry['spoken_code'])
         name_audio = sound.Sound(audio_path, secs = 0.9)
         
         # Trigger: spoken_code
@@ -420,6 +418,9 @@ for block in range(n2):
         # 1. Select a random image and its corresponding name
         object_name = row['audio']
         correct_image = row['visual']
+        visual_to_picture_code = {
+            val['visual']: int(val['picture_code']) for val in data_dict.values()
+        }
         
         random.shuffle([correct_image])
         
@@ -436,8 +437,7 @@ for block in range(n2):
         image_display.draw()
         
         # Trigger: picture_code
-        target_entry = data_dict[correct_image]
-        picture_code = int(target_entry["picture_code"])        
+        picture_code = visual_to_picture_code.get(correct_image, 0)
         win.callOnFlip(send_trigger, picture_code)
         win.flip()
         core.wait(2)
