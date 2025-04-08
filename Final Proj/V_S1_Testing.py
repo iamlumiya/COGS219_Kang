@@ -86,13 +86,14 @@ except Exception as e:
     ser = None
 
 # Set up the window
-win = visual.Window(fullscr = True, screen = 0, color = "black", units = "pix", checkTiming = False)
+win = visual.Window(size = (800, 600) , screen = 0, color = "black", units = "pix", checkTiming = False)
 mouse = event.Mouse(visible = True, win = win)
 
 # Function to send the trigger to the EEG collecting computer
 def send_trigger(code):
     if ser:
         ser.write(chr(code).encode())
+        core.wait(0.005)
         ser.write(chr(0).encode())
         print(code)
     else:
@@ -196,6 +197,12 @@ for block_num, block in enumerate(all_blocks):
         selected_name = trial['name']
         selected_image = trial['image']
         is_match = trial['match']
+        
+        # Mapping dictionary for picture_code
+        visual_to_picture_code = {
+            entry["visual"]: int(entry["picture_code"])
+            for entry in data_dict.values()
+        }
       
         #1 Each trial begins with a fixation cross (500ms)
         fixation_display.draw()
@@ -213,13 +220,14 @@ for block_num, block in enumerate(all_blocks):
         
         # Get the correct info from data_dict
         target_entry = data_dict[selected_name]
+        written_code = int(target_entry["written_code"])
 
         #2 Display the name (200ms)
         name_display.setText(selected_name)
         name_display.draw()
         
         # Trigger: written_code
-        win.callOnFlip(send_trigger, int(target_entry['written_code']))
+        win.callOnFlip(send_trigger, written_code)
         win.flip()
         core.wait(0.2)
 
@@ -228,13 +236,7 @@ for block_num, block in enumerate(all_blocks):
         image_display.draw()
         
         # Trigger: picture_code
-        for val in data_dict.values():
-            if val['visual'] == selected_image:
-                picture_code = int(val['picture_code'])
-                break
-        else:
-            picture_code = 0
-        
+        picture_code = visual_to_picture_code.get(selected_image, 0)
         win.callOnFlip(send_trigger, picture_code)
         win.flip()
         core.wait(0.2)
@@ -305,9 +307,7 @@ for block_num, block in enumerate(all_blocks):
             'response': response,
             'response_time': rt * 1000 if rt else np.nan,
             'correct': is_correct,
-            'match': match_code,
-            'picture_code': picture_code,
-            'writte_code': int(target_entry['written_code'])
+            'match': match_code
         })
         
     # Update two-block tracking
@@ -365,7 +365,7 @@ show_message("Type the correct name of the object and press the ENTER key to sub
 # Prepare text and image component
 fixation_display = visual.TextStim(win, text = "+", font = 'Arial', color = 'white', height = 35, pos = (0,0))
 image_display = visual.ImageStim(win, image = None, size = [250, 250], pos = (0,0))
-input_display = visual.TextStim(win, text = "", font = 'Arial', color = 'white', height = 30, pos = (0, 0))
+input_display = visual.TextStim(win, text = "", font = 'Arial', color = 'black', height = 30, pos = (0, 0))
 input_box = visual.Rect(win, width = 150, height = 50, lineColor = "white", pos = (0, 0))
 
 # Set the number of repetitions
@@ -389,6 +389,9 @@ for block in range(n2):
         # 1. Select a random image and its corresponding name
         object_image = row['visual']
         correct_name = row['name']
+        visual_to_picture_code = {
+            val['visual']: int(val['picture_code']) for val in data_dict.values()
+        }
         
         random.shuffle([correct_name])
         
@@ -405,13 +408,7 @@ for block in range(n2):
         image_display.draw()
         
         # Trigger: picture_code
-        for val in data_dict.values():
-            if val["visual"] == object_image:
-                picture_code = int(val["picture_code"])
-                break
-        else:
-            picture_code = 0
-            
+        picture_code = visual_to_picture_code.get(object_image, 0)
         win.callOnFlip(send_trigger, picture_code)
         win.flip()
         core.wait(2)
@@ -449,18 +446,6 @@ for block in range(n2):
         rt = responseTimer.getTime()
         is_correct = typed_name.strip().lower() == correct_name.strip().lower()
         
-        # Send trigger for typed word if valid
-        typed_name_clean = typed_name.strip().lower()
-        code_to_send = None
-        
-        for entry in data_dict.values():
-            if entry["name"].strip().lower() == typed_name_clean:
-                code_to_send = int(entry["written_code"])
-                break
-                
-        if code_to_send:
-            send_trigger(code_to_send)
-        
         # 5. Display fixation cross; inter-trial interval
         fixation_display.draw()
         win.flip()
@@ -475,9 +460,7 @@ for block in range(n2):
             'object_image': data_dict[correct_name]["object"],
             'response': typed_name,
             'correct': 1 if is_correct else 0,
-            'response_time': rt * 1000 if rt else 0,
-            'picture_code': picture_code,
-            'response_written_code': code_to_send if code_to_send else "N/A"
+            'response_time': rt * 1000 if rt else 0b
         })
         
         event.clearEvents()
