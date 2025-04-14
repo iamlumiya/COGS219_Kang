@@ -122,6 +122,8 @@ def send_trigger(code):
         print(code)
     else:
         print(f"[Mock] EEG Trigger: {code}")
+        
+learning_trial_counter = 0
 
 
 # Function to show a message and wait for a mouse click
@@ -137,6 +139,12 @@ def show_message(text):
 # Welcome message
 print("Starting Initial Presentation Phase...")
 show_message("Welcome to Brain & Cognition Lab.\n\nClick the mouse to start the training.")
+
+# Trigger: block_code
+core.wait(0.05)
+win.callOnFlip(send_trigger, 67) # Initial presentation
+win.flip()
+core.wait(0.05)
 
 # Prepare text and image components
 current_phase = "Initial_Presentation"
@@ -162,7 +170,7 @@ for block in range(n):
         # 1. Select a random pair of an image and a name
         object_image = row['visual']
         correct_name = row['name']
-                
+        
         # 2. Display an image with the name for 2 seconds
         image_display.image = object_image
         name_display.text = correct_name
@@ -204,6 +212,12 @@ print("Starting Recognition Training Phase...")
 current_phase = "Recognition_training"
 core.wait(0.1)
 show_message("Choose the correct image of the name on the screen.\n\n Click the mouse to start.")
+
+# Trigger: block_code
+core.wait(0.05)
+win.callOnFlip(send_trigger, 68) # Recognition
+win.flip()
+core.wait(0.05)
         
 # Define the image and text positions
 image_positions = [(-200, 200), (200, 200), (-200, -200), (200, -200)]
@@ -250,7 +264,7 @@ for block in range(n2):
         for stim, img_path in zip(image_stims, image_paths):
             stim.setImage(img_path)
             stim.draw()
-            PS_word.draw()
+        PS_word.draw()
         
         # Trigger: picture_code
         target_entry = data_dict[object_name]
@@ -264,7 +278,7 @@ for block in range(n2):
         name_display.draw()
         for stim in image_stims:
             stim.draw()
-            PS_word.draw()
+        PS_word.draw()
         
         # Trigger: written_code
         written_code = int(target_entry['written_code'])
@@ -357,8 +371,14 @@ print("Completed Recognition Training Phase.\n")
 core.wait(0.1)
 
 # Initial Presentation Block - Visual - Set 1
-print("Starting Initial Presentation Phase...")
-current_phase = "Initial_Presentation_2"
+print("Starting Second Presentation Phase...")
+current_phase = "Second_Presentation_2"
+
+# Trigger: block_code
+core.wait(0.05)
+win.callOnFlip(send_trigger, 69) # Second presentation
+win.flip()
+core.wait(0.05)
 
 # Prepare text and image components
 name_display = visual.TextStim(win, text ="", font ='Arial', color = 'white', height = 35, pos =(0,150))
@@ -424,6 +444,12 @@ event.clearEvents()
 print("Starting Name Learning Phase...")
 current_phase = "Name_Learning"
 show_message("Choose the correct name for the image on the screen.\n\nClick the mouse to start.")
+
+# Trigger: block_code
+core.wait(0.05)
+win.callOnFlip(send_trigger, 70) # Name Learning
+win.flip()
+core.wait(0.05)
 
 # Define the text position
 name_positions = [(-200, 200), (200, 200), (200, -200), (-200, -200)]
