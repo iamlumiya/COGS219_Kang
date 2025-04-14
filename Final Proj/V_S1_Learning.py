@@ -110,6 +110,9 @@ except Exception as e:
 win = visual.Window(fullscr = True, screen = 0, color = "black", units = "pix", checkTiming = False)
 mouse = event.Mouse(visible = True, win = win)
 
+# Photosensor marker
+PS_word = visual.Rect(win = win, name = 'PS_word', width = 25, height = 25, ori = 0.0, pos = (900, -500), lineWidth = 1.0, colorSpace = 'rgb', lineColor = 'white', fillColor = 'white', opacity = None, interpolate = True)
+
 # Function to send the trigger to the EEG collecting computer
 def send_trigger(code):
     if ser:
@@ -165,6 +168,7 @@ for block in range(n):
         name_display.text = correct_name
         image_display.draw()
         name_display.draw()
+        PS_word.draw()
         
         # Trigger: written_code
         written_code = int(data_dict[correct_name]['written_code'])
@@ -246,6 +250,7 @@ for block in range(n2):
         for stim, img_path in zip(image_stims, image_paths):
             stim.setImage(img_path)
             stim.draw()
+            PS_word.draw()
         
         # Trigger: picture_code
         target_entry = data_dict[object_name]
@@ -259,6 +264,7 @@ for block in range(n2):
         name_display.draw()
         for stim in image_stims:
             stim.draw()
+            PS_word.draw()
         
         # Trigger: written_code
         written_code = int(target_entry['written_code'])
@@ -384,6 +390,7 @@ for block in range(n):
         name_display.text = correct_name
         image_display.draw()
         name_display.draw()
+        PS_word.draw()
         
         # Trigger: written_code
         written_code = int(data_dict[correct_name]['written_code'])
@@ -462,6 +469,7 @@ for block in range(n3):
         # 4. Display an image
         image_display.image = object_image
         image_display.draw()
+        PS_word.draw()
         
         # Trigger: picture_code
         target_entry = data_dict[correct_name]
@@ -474,6 +482,7 @@ for block in range(n3):
         for stim, name_text in zip(name_stims, name_choices):
             stim.setText(name_text)
             stim.draw()
+            PS_word.draw()
         
         image_display.draw()
         
