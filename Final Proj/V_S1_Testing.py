@@ -255,7 +255,7 @@ for block_num, block in enumerate(all_blocks):
         PS_word.draw()
         
         # Trigger: response_code
-        win.callOnFlip(send_trigger, 0)
+        win.callOnFlip(send_trigger, 88) # 88 for response_code
         win.flip()
         event.clearEvents()
         
