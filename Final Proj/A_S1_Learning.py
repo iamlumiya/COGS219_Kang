@@ -114,6 +114,7 @@ mouse = event.Mouse(visible = True, win = win)
 def send_trigger(code):
     if ser:
         ser.write(chr(code).encode())
+        core.wait(0.005)
         ser.write(chr(0).encode())
         print(code)
     else:
@@ -153,16 +154,18 @@ for block in range(n):
             break
             
         # 1. Select a random pair of an image and a name
+        correct_name = row['name']
         object_image = row['visual']
-        correct_name = row['audio']
-        
+        audio_path = data_dict[correct_name]['audio']
+
         # 2. Display an image with the name for 2 seconds
         image_display.image = object_image
-        name_audio = sound.Sound(correct_name, stopTime = 1.5)
+        name_audio = sound.Sound(audio_path, stopTime = 1.5)
         image_display.draw()
         
         # Trigger: spoken_code
-        win.callOnFlip(send_trigger, int(row['spoken_code']))
+        spoken_code = int(data_dict[correct_name]['spoken_code'])
+        win.callOnFlip(send_trigger, spoken_code)
         win.flip()
         name_audio.play()
         core.wait(2)
@@ -173,9 +176,7 @@ for block in range(n):
             'block': block + 1,
             'trial': index + 1,
             'object_name': data_dict[row["name"]]["name"],
-            'object_image': data_dict[row["name"]]["object"],
-            'picture_code': row['picture_code'],
-            'spoken_code': row['spoken_code']
+            'object_image': data_dict[row["name"]]["object"]
         })
         
         # Blank space
@@ -227,8 +228,9 @@ for block in range(n2):
             break
             
         #1. Select a random name and its corresponding image
-        object_name = row['audio']
+        object_name = row['name']
         correct_image = row['visual']
+        audio_path = data_dict[object_name]['audio']
         
         #2. Select three distractor images (excluding the correct image)
         distractor_images = random.sample([img for img in stimuli_df['visual'] if img != correct_image], 3)
@@ -243,18 +245,21 @@ for block in range(n2):
             stim.draw()
         
         # Trigger: picture_code
-        win.callOnFlip(send_trigger, int(row['picture_code']))
+        target_entry = data_dict[object_name]
+        picture_code = int(target_entry['picture_code'])
+        win.callOnFlip(send_trigger, picture_code)
         win.flip()
         core.wait(1)
         
         #5. Play the audio file with four images
-        name_audio = sound.Sound(object_name, stopTime = 2)
+        name_audio = sound.Sound(audio_path, stopTime = 2)
         name_audio.play()
         for stim in image_stims:
             stim.draw()
         
         # Trigger: spoken_code
-        win.callOnFlip(send_trigger, int(row['spoken_code']))
+        spoken_code = int(target_entry['spoken_code'])
+        win.callOnFlip(send_trigger, spoken_code)
         win.flip()
         
         #6. Wait for participants to respond by clicking
@@ -318,9 +323,7 @@ for block in range(n2):
             'object_image': data_dict[row["name"]]["object"],
             'selected': map_selected(selected_image),
             'correct': is_correct,
-            'response_time': rt * 1000 if rt else np.nan,
-            'picture_code': row['picture_code'],
-            'spoken_code': row['spoken_code']
+            'response_time': rt * 1000 if rt else np.nan
         })
         
         event.clearEvents()
@@ -367,15 +370,17 @@ for block in range(n):
             
         # 1. Select a random pair of an image and a name
         object_image = row['visual']
-        correct_name = row['audio']
+        correct_name = row['name']
+        audio_path = data_dict[correct_name]['audio']
         
         # 2. Display an image with the name for 2 seconds
         image_display.image = object_image
-        name_audio = sound.Sound(correct_name, stopTime = 1.5)
+        name_audio = sound.Sound(audio_path, stopTime = 1.5)
         image_display.draw()
         
         # Trigger: spoken_code
-        win.callOnFlip(send_trigger, int(row['spoken_code']))
+        spoken_code = int(data_dict[correct_name]['spoken_code'])
+        win.callOnFlip(send_trigger, spoken_code)
         win.flip()
         name_audio.play()
         core.wait(2)
@@ -437,25 +442,27 @@ for block in range(n3):
             break
             
         # 1. Select a random image and its corresponding name
+        correct_name = row['name']
         object_image = row['visual']
-        correct_name = row['audio']
         
         # 2. Select three distractor names (excluding the correct name)
-        distractor_names = random.sample([name for name in stimuli_df['audio'] if name != correct_name], 3)
+        distractor_names = random.sample([name for name in stimuli_df['name'] if name != correct_name], 3)
         
         # 3. Form the name set (1 correct + 3 distractors) and shuffle
         name_choices = distractor_names + [correct_name]
         random.shuffle(name_choices)
         
         # Load audio files for the four choices
-        audio_sounds =  [sound.Sound(name) for name in name_choices]
+        audio_sounds =  [sound.Sound(data_dict[name]['audio']) for name in name_choices]
         
         # 4. Display an image
         image_display.image = object_image
         image_display.draw()
         
         # Trigger: picture_code
-        win.callOnFlip(send_trigger, int(row['picture_code']))
+        target_entry = data_dict[correct_name]
+        picture_code = int(target_entry['picture_code'])
+        win.callOnFlip(send_trigger, picture_code)
         win.flip()
         core.wait(2)
 
@@ -478,7 +485,7 @@ for block in range(n3):
         rt_tracking_active = False
         response_given = False
 
-        for i, audio in enumerate(audio_sounds):
+        for i, name in enumerate(name_choices):
             if "escape" in event.getKeys():
                 core.quit()
 
@@ -495,24 +502,15 @@ for block in range(n3):
             win.flip()
 
             # Check if this is the correct name's audio, then start the response
-            if name_choices[i] == correct_name:
+            if name == correct_name:
                 responseTimer.reset()
                 rt_tracking_active = True
                     
             # Trigger: spoken_word for each name being played
-            name_clean = os.path.basename(name_choices[i])
-            spoken_code_to_send = None
-            
-            for entry in data_dict.values():
-                if entry['audio'] and os.path.basename(entry['audio']) == name_clean:
-                    spoken_code_to_send = int(entry['spoken_code'])
-                    break
-                    
-            if spoken_code_to_send:
-                send_trigger(spoken_code_to_send )
-            
+            send_trigger(int(data_dict[name]['spoken_code']))
+
             # Play audio and check for responses simultaneously
-            audio.play()
+            audio_sounds[i].play()
                 
             # Allow mouse-click responeses while audio is playing
             audio_duration = 1.5
@@ -546,11 +544,11 @@ for block in range(n3):
                             response_given = True
                         
                             # Stop audio immediately and exit the loop
-                            audio.stop()
+                            audio_sounds[i].stop()
                             break
-                if response:
+                if response_given:
                     break
-            if response:
+            if response_given:
                 break
             
         # Reset the last stimulus after all audios are played
@@ -622,9 +620,7 @@ for block in range(n3):
             'object_image': data_dict[row["name"]]["object"],
             'selected': map_selected(selected_name),
             'correct': is_correct,
-            'response_time': rt * 1000 if rt else 0,
-            'picture_code': row['picture_code'],
-            'selected_spoken_code': spoken_code_to_send if response_given else "N/A"
+            'response_time': rt * 1000 if rt else 0
         })
             
     event.clearEvents()

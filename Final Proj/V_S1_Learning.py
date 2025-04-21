@@ -110,14 +110,20 @@ except Exception as e:
 win = visual.Window(fullscr = True, screen = 0, color = "black", units = "pix", checkTiming = False)
 mouse = event.Mouse(visible = True, win = win)
 
+# Photosensor marker
+PS_word = visual.Rect(win = win, name = 'PS_word', width = 25, height = 25, ori = 0.0, pos = (900, -500), lineWidth = 1.0, colorSpace = 'rgb', lineColor = 'white', fillColor = 'white', opacity = None, interpolate = True)
+
 # Function to send the trigger to the EEG collecting computer
 def send_trigger(code):
     if ser:
         ser.write(chr(code).encode())
+        core.wait(0.005)
         ser.write(chr(0).encode())
         print(code)
     else:
         print(f"[Mock] EEG Trigger: {code}")
+        
+learning_trial_counter = 0
 
 
 # Function to show a message and wait for a mouse click
@@ -133,6 +139,12 @@ def show_message(text):
 # Welcome message
 print("Starting Initial Presentation Phase...")
 show_message("Welcome to Brain & Cognition Lab.\n\nClick the mouse to start the training.")
+
+# Trigger: block_code
+core.wait(0.05)
+win.callOnFlip(send_trigger, 67) # Initial presentation
+win.flip()
+core.wait(0.05)
 
 # Prepare text and image components
 current_phase = "Initial_Presentation"
@@ -158,15 +170,17 @@ for block in range(n):
         # 1. Select a random pair of an image and a name
         object_image = row['visual']
         correct_name = row['name']
-                
+        
         # 2. Display an image with the name for 2 seconds
         image_display.image = object_image
         name_display.text = correct_name
         image_display.draw()
         name_display.draw()
+        PS_word.draw()
         
         # Trigger: written_code
-        win.callOnFlip(send_trigger, int(row['written_code']))
+        written_code = int(data_dict[correct_name]['written_code'])
+        win.callOnFlip(send_trigger, written_code)
         win.flip()
         
         core.wait(2)
@@ -178,8 +192,6 @@ for block in range(n):
             'trial': index + 1,
             'object_name': data_dict[row["name"]]["name"],
             'object_image': data_dict[row["name"]]["object"],
-            'picture_code': row['picture_code'],
-            'written_code': row['written_code']
         })
         
         # Blank space
@@ -200,6 +212,12 @@ print("Starting Recognition Training Phase...")
 current_phase = "Recognition_training"
 core.wait(0.1)
 show_message("Choose the correct image of the name on the screen.\n\n Click the mouse to start.")
+
+# Trigger: block_code
+core.wait(0.05)
+win.callOnFlip(send_trigger, 68) # Recognition
+win.flip()
+core.wait(0.05)
         
 # Define the image and text positions
 image_positions = [(-200, 200), (200, 200), (-200, -200), (200, -200)]
@@ -246,9 +264,12 @@ for block in range(n2):
         for stim, img_path in zip(image_stims, image_paths):
             stim.setImage(img_path)
             stim.draw()
+        PS_word.draw()
         
         # Trigger: picture_code
-        win.callOnFlip(send_trigger, int(row['picture_code']))
+        target_entry = data_dict[object_name]
+        picture_code = int(target_entry['picture_code'])
+        win.callOnFlip(send_trigger, picture_code)
         win.flip()
         core.wait(1)
         
@@ -257,9 +278,11 @@ for block in range(n2):
         name_display.draw()
         for stim in image_stims:
             stim.draw()
+        PS_word.draw()
         
         # Trigger: written_code
-        win.callOnFlip(send_trigger, int(row['written_code']))
+        written_code = int(target_entry['written_code'])
+        win.callOnFlip(send_trigger, written_code)
         win.flip()
 
         #6. Wait for participants to respond by clicking
@@ -323,9 +346,7 @@ for block in range(n2):
             'object_image': data_dict[row["name"]]["object"],
             'selected': map_selected(selected_image),
             'correct': is_correct,
-            'response_time': rt * 1000 if rt else np.nan,
-            'picture_code': row['picture_code'],
-            'written_code': row['written_code']
+            'response_time': rt * 1000 if rt else np.nan
         })
         
         event.clearEvents()
@@ -350,8 +371,14 @@ print("Completed Recognition Training Phase.\n")
 core.wait(0.1)
 
 # Initial Presentation Block - Visual - Set 1
-print("Starting Initial Presentation Phase...")
-current_phase = "Initial_Presentation_2"
+print("Starting Second Presentation Phase...")
+current_phase = "Second_Presentation_2"
+
+# Trigger: block_code
+core.wait(0.05)
+win.callOnFlip(send_trigger, 69) # Second presentation
+win.flip()
+core.wait(0.05)
 
 # Prepare text and image components
 name_display = visual.TextStim(win, text ="", font ='Arial', color = 'white', height = 35, pos =(0,150))
@@ -383,9 +410,11 @@ for block in range(n):
         name_display.text = correct_name
         image_display.draw()
         name_display.draw()
+        PS_word.draw()
         
         # Trigger: written_code
-        win.callOnFlip(send_trigger, int(row['written_code']))
+        written_code = int(data_dict[correct_name]['written_code'])
+        win.callOnFlip(send_trigger, written_code)
         win.flip()
         core.wait(2)
         
@@ -395,9 +424,7 @@ for block in range(n):
             'block': block + 1,
             'trial': index + 1,
             'object_name': data_dict[row["name"]]["name"],
-            'object_image': data_dict[row["name"]]["object"],
-            'picture_code': row['picture_code'],
-            'written_code': row['written_code']
+            'object_image': data_dict[row["name"]]["object"]
         })
 
         # Blank space
@@ -417,6 +444,12 @@ event.clearEvents()
 print("Starting Name Learning Phase...")
 current_phase = "Name_Learning"
 show_message("Choose the correct name for the image on the screen.\n\nClick the mouse to start.")
+
+# Trigger: block_code
+core.wait(0.05)
+win.callOnFlip(send_trigger, 70) # Name Learning
+win.flip()
+core.wait(0.05)
 
 # Define the text position
 name_positions = [(-200, 200), (200, 200), (200, -200), (-200, -200)]
@@ -449,8 +482,8 @@ for block in range(n3):
             break
             
         # 1. Select a random image and its corresponding name
-        object_image = row['visual']
         correct_name = row['name']
+        object_image = row['visual']
         
         # 2. Select three distractor names (excluding the correct name)
         distractor_names = random.sample([name for name in stimuli_df['name'] if name != correct_name], 3)
@@ -462,9 +495,12 @@ for block in range(n3):
         # 4. Display an image
         image_display.image = object_image
         image_display.draw()
+        PS_word.draw()
         
         # Trigger: picture_code
-        win.callOnFlip(send_trigger, int(row['picture_code']))
+        target_entry = data_dict[correct_name]
+        picture_code = int(target_entry['picture_code'])
+        win.callOnFlip(send_trigger, picture_code)
         win.flip()
         core.wait(2)
         
@@ -472,11 +508,13 @@ for block in range(n3):
         for stim, name_text in zip(name_stims, name_choices):
             stim.setText(name_text)
             stim.draw()
+            PS_word.draw()
         
         image_display.draw()
         
         # Trigger: written_code
-        win.callOnFlip(send_trigger, int(row['written_code']))
+        written_code = int(target_entry['written_code'])
+        win.callOnFlip(send_trigger, written_code)
         win.flip()
         
         # 6. Wait for participants to respond by clicking
@@ -555,9 +593,7 @@ for block in range(n3):
             'object_image': data_dict[row["name"]]["object"],
             'selected': map_selected(selected_name),
             'correct': is_correct,
-            'response_time': rt * 1000 if rt else np.nan,
-            'picture_code': row['picture_code'],
-            'written_code': row['written_code']
+            'response_time': rt * 1000 if rt else np.nan
         })
 
     event.clearEvents()

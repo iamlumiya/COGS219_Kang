@@ -58,6 +58,9 @@ stimuli_df = pd.DataFrame.from_dict(data_dict, orient = 'index')
 win = visual.Window(fullscr = True, screen = 0, color = "black", units = "pix", checkTiming = False)
 mouse = event.Mouse(visible = True, win = win)
 
+# Photosensor marker
+PS_word = visual.Rect(win = win, name = 'PS_word', width = (0.05, 0.05)[0], height = (0.05, 0.05)[1], ori = 0.0, pos = (+0.86, -0.47), lineWidth = 1.0, colorSpace = 'rgb', lineColor = 'white', fillColor = 'white', opacity = None, depth = -6.0, interpolate = True)
+
 # Function to show a message and wait for a mouse click
 def show_message(text):
     msg = visual.TextStim(win, text = text, font = 'Arial', color = "white", height = 35, pos = (0, 0))
@@ -97,6 +100,7 @@ for image_path in selected_images:
     image_display.image = image_path
     image_display.draw()
     name_display.draw()
+    PS_word.draw()
     win.flip()
     core.wait(2)
 
@@ -156,6 +160,7 @@ for correct_image in selected_images:
         stim.setImage(img_path)
         stim.draw()
         
+    PS_word.draw()
     win.flip()
     core.wait(1)
 
@@ -164,6 +169,7 @@ for correct_image in selected_images:
     for stim in image_stims:
         stim.draw()
         
+    PS_word.draw()    
     win.flip()
 
     # 6. Wait for participants to response by clicking
@@ -241,6 +247,7 @@ for image_path in selected_images:
     image_display.image = image_path
     image_display.draw()
     name_display.draw()
+    PS_word.draw()
     win.flip()
     core.wait(2)
 
@@ -293,6 +300,7 @@ for correct_image in selected_images:
     # Display an image
     image_display.image = correct_image
     image_display.draw()
+    PS_word.draw()
     win.flip()
     core.wait(2)
 
@@ -301,6 +309,7 @@ for correct_image in selected_images:
         stim.draw()
         
     image_display.draw()
+    PS_word.draw()
     win.flip()
 
     # Wait for the response
@@ -429,12 +438,14 @@ for trial in trials:
     # Display the name (200ms)
     name_display.setText(displayed_name)
     name_display.draw()
+    PS_word.draw()
     win.flip()
     core.wait(.2)
 
     # Visual display of the object either matching or not matching that name
     image_display.setImage(displayed_image)
     image_display.draw()
+    PS_word.draw()
     win.flip()
     core.wait(.2)
 
@@ -517,6 +528,7 @@ for image in selected_images:
     # Display an image
     image_display.image = image
     image_display.draw()
+    PS_word.draw()
     win.flip()
     core.wait(2) 
 
