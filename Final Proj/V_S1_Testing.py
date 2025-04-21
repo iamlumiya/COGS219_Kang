@@ -86,8 +86,8 @@ except Exception as e:
     ser = None
 
 # Set up the window
-win = visual.Window(size = (800, 600) , screen = 0, color = "black", units = "pix", checkTiming = False)
-mouse = event.Mouse(visible = True, win = win)
+win = visual.Window(fullscr = True , screen = 0, color = "black", units = "pix", checkTiming = False)
+mouse = event.Mouse(visible = False, win = win)
 
 # Photosensor marker
 PS_word = visual.Rect(win = win, name = 'PS_word', width = 25, height = 25, ori = 0.0, pos = (900, -500), lineWidth = 1.0, colorSpace = 'rgb', lineColor = 'white', fillColor = 'white', opacity = None, interpolate = True)
