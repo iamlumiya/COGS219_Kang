@@ -303,6 +303,10 @@ for block in range(n2):
             mouse_clicks = mouse.getPressed()
             
             if mouse_clicks[0]:# IF left click detected
+                
+                # Trigger: mouse-clicking
+                send_trigger(103)
+                
                 for i, stim in enumerate(image_stims):
                     if stim.contains(mouse):
                        selected_image = image_paths[i]
@@ -534,6 +538,10 @@ for block in range(n3):
             mouse_clicks = mouse.getPressed()
                 
             if mouse_clicks[0]:
+                
+                # Trigger: mouse-clicking
+                send_trigger(103)
+                
                 for i, stim in enumerate(name_stims):
                     mouse_x, mouse_y = mouse.getPos()
                     
