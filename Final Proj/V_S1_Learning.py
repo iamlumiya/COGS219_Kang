@@ -278,7 +278,6 @@ for block in range(n2):
         name_display.draw()
         for stim in image_stims:
             stim.draw()
-        PS_word.draw()
         
         # Trigger: written_code
         written_code = int(target_entry['written_code'])
@@ -508,7 +507,6 @@ for block in range(n3):
         for stim, name_text in zip(name_stims, name_choices):
             stim.setText(name_text)
             stim.draw()
-            PS_word.draw()
         
         image_display.draw()
         
