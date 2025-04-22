@@ -107,8 +107,11 @@ except Exception as e:
     ser = None
 
 # Set up the window
-win = visual.Window(size = (800,600) , screen = 0, color = "black", units = "pix", checkTiming = False)
+win = visual.Window(fullscr = True, screen = 0, color = "black", units = "pix", checkTiming = False)
 mouse = event.Mouse(visible = True, win = win)
+
+# Photosensor marker
+PS_word = visual.Rect(win = win, name = 'PS_word', width = 25, height = 25, ori = 0.0, pos = (900, -500), lineWidth = 1.0, colorSpace = 'rgb', lineColor = 'white', fillColor = 'white', opacity = None, interpolate = True)
 
 # Function to send the trigger to the EEG collecting computer
 def send_trigger(code):
@@ -134,6 +137,12 @@ def show_message(text):
 print("Starting Initial Presentation Phase...")
 current_phase = "Initial_Presentation_1"
 show_message("Welcome to Brain & Cognition Lab.\n\n Click the mouse to start the training.")
+
+# Trigger: block_code
+core.wait(0.05)
+win.callOnFlip(send_trigger, 67) # Initial presentation
+win.flip()
+core.wait(0.05)
 
 # Prepare text and image components
 image_display = visual.ImageStim(win, image = None, size = [250,250], pos = (0,0))
@@ -162,6 +171,7 @@ for block in range(n):
         image_display.image = object_image
         name_audio = sound.Sound(audio_path, stopTime = 1.5)
         image_display.draw()
+        PS_word.draw()
         
         # Trigger: spoken_code
         spoken_code = int(data_dict[correct_name]['spoken_code'])
@@ -197,7 +207,13 @@ print("Starting Recognition Training Phase...")
 current_phase = "Recognition_training"
 core.wait(0.1)
 show_message("Choose the correct image of the name on the screen.\n\n Click the mouse to start.")
-        
+
+# Trigger: block_code
+core.wait(0.05)
+win.callOnFlip(send_trigger, 68) # Recognition
+win.flip()
+core.wait(0.05)
+
 # Define the image and text positions
 image_positions = [(-200, 200), (200, 200), (-200, -200), (200, -200)]
 
@@ -243,6 +259,7 @@ for block in range(n2):
         for stim, img_path in zip(image_stims, image_paths):
             stim.setImage(img_path)
             stim.draw()
+        PS_word.draw()
         
         # Trigger: picture_code
         target_entry = data_dict[object_name]
@@ -281,6 +298,10 @@ for block in range(n2):
             mouse_clicks = mouse.getPressed()
             
             if mouse_clicks[0]:# IF left click detected
+                
+                # Trigger: mouse-clicking
+                send_trigger(103)
+                
                 for i, stim in enumerate(image_stims):
                     if stim.contains(mouse):
                        selected_image = image_paths[i]
@@ -350,6 +371,13 @@ core.wait(0.1)
 print("Starting Initial Presentation Phase...")
 current_phase = "Initial_Presentation_2"
 
+
+# Trigger: block_code
+core.wait(0.05)
+win.callOnFlip(send_trigger, 69) # Second presentation
+win.flip()
+core.wait(0.05)
+
 # Prepare text and image components
 image_display = visual.ImageStim(win, image = None, size = [250,250], pos = (0,0))
 
@@ -377,6 +405,7 @@ for block in range(n):
         image_display.image = object_image
         name_audio = sound.Sound(audio_path, stopTime = 1.5)
         image_display.draw()
+        PS_word.draw()
         
         # Trigger: spoken_code
         spoken_code = int(data_dict[correct_name]['spoken_code'])
@@ -411,6 +440,12 @@ event.clearEvents()
 print("Starting Name Learning Phase...")
 current_phase = "Name_Learning"
 show_message("Choose the correct name for the image on the screen.\n\nClick the mouse to start.")
+
+# Trigger: block_code
+core.wait(0.05)
+win.callOnFlip(send_trigger, 70) # Name Learning
+win.flip()
+core.wait(0.05)
 
 # Define the text position
 number_positions = [(-200, 200), (200, 200), (200, -200), (-200, -200)]
@@ -458,6 +493,7 @@ for block in range(n3):
         # 4. Display an image
         image_display.image = object_image
         image_display.draw()
+        PS_word.draw()
         
         # Trigger: picture_code
         target_entry = data_dict[correct_name]
@@ -469,7 +505,6 @@ for block in range(n3):
         # 5. Display for numbers on the screen
         for stim in number_stims:
             stim.draw()
-
         image_display.draw()
         win.flip()
 
@@ -520,6 +555,10 @@ for block in range(n3):
                 mouse_clicks = mouse.getPressed()
                     
                 if mouse_clicks[0]:
+                    
+                    # Trigger: mouse-clicking
+                    send_trigger(103)
+                    
                     mouse_x, mouse_y = mouse.getPos()
                         
                     for j, stim in enumerate(number_stims):
@@ -566,6 +605,10 @@ for block in range(n3):
                 buttons, times = mouse.getPressed(getTime = True)
         
                 if buttons[0]:
+                    
+                    # Trigger: mouse-clicking
+                    send_trigger(103)
+                    
                     for i, stim in enumerate(number_stims):
                         if stim.contains(mouse):
                             selected_name = name_choices[i]
