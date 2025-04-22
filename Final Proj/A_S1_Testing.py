@@ -107,8 +107,11 @@ except Exception as e:
     ser = None
 
 # Set up the window
-win = visual.Window(size = (800, 600), screen = 0, color = "black", units = "pix", checkTiming = False)
-mouse = event.Mouse(visible = True, win = win)
+win = visual.Window(fullscr = True, screen = 0, color = "black", units = "pix", checkTiming = False)
+mouse = event.Mouse(visible = False, win = win)
+
+# Photosensor marker
+PS_word = visual.Rect(win = win, name = 'PS_word', width = 25, height = 25, ori = 0.0, pos = (900, -500), lineWidth = 1.0, colorSpace = 'rgb', lineColor = 'white', fillColor = 'white', opacity = None, interpolate = True)
 
 # Function to send the trigger to the EEG collecting computer
 def send_trigger(code):
@@ -256,6 +259,7 @@ for block_num, block in enumerate(all_blocks):
         # 3. Visual display of the object either matching or not matching that name (200ms)
         image_display.setImage(selected_image)
         image_display.draw()
+        PS_word.draw()
         
         # Trigger: picture_code
         picture_code = visual_to_picture_code.get(selected_image, 0)
@@ -269,6 +273,10 @@ for block_num, block in enumerate(all_blocks):
         
         # 5. Participants needs to decide whether the object and name match (3000ms max)
         response_wait.draw()
+        PS_word.draw()
+        
+        # Trigger: responsed_code
+        win.callOnFlip(send_trigger, 88) # 88 for response_code
         win.flip()
         event.clearEvents()
         
@@ -292,11 +300,15 @@ for block_num, block in enumerate(all_blocks):
             if "left" in keys:
                 response = "match"
                 rt = responseTimer.getTime()
+                
+                send_trigger(101)
                 break
                 
             elif "right" in keys:
                 response = "mismatch"
                 rt = responseTimer.getTime()
+                
+                send_trigger(102)
                 break   
                 
         # If exit was triggered inside the while loop, break the main loop as well
@@ -435,6 +447,7 @@ for block in range(n2):
         # 3. Display the image (2000ms)
         image_display.image = correct_image
         image_display.draw()
+        PS_word.draw()
         
         # Trigger: picture_code
         picture_code = visual_to_picture_code.get(correct_image, 0)
